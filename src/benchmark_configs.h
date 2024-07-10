@@ -40,7 +40,7 @@ struct BenchmarkConfig {
       abort();
     }
 
-    if (FLAGS_query_type == "point") {
+    if (FLAGS_query_type == "point-contains") {
       config.query_type = BenchmarkConfig::QueryType::kPointContains;
     } else if (FLAGS_query_type == "range-contains") {
       config.query_type = BenchmarkConfig::QueryType::kRangeContains;

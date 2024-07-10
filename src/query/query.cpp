@@ -34,8 +34,6 @@ int main(int argc, char *argv[]) {
   std::cout << "Loaded geometries " << geoms.size() << std::endl;
   time_stat ts;
 
-  std::cout << "query type " << (int) conf.query_type << std::endl;
-
   switch (conf.query_type) {
   case BenchmarkConfig::QueryType::kPointContains: {
     auto queries = LoadPoints(conf.query, conf.limit);

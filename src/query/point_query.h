@@ -76,6 +76,9 @@ time_stat RunParallelPointQuery(const std::vector<box_t> &boxes,
         },
         tid));
   }
+  for (auto &thread : threads) {
+    thread.join();
+  }
   sw.stop();
   ts.query_ms = sw.ms();
   ts.num_results = results.size();

@@ -30,7 +30,6 @@ int main(int argc, char *argv[]) {
   std::string output = FLAGS_output;
   std::string query_type = FLAGS_query_type;
   int limit = FLAGS_limit;
-  int max_points_per_box = FLAGS_max_point_in_box;
   int min_qualified = FLAGS_min_qualified;
   int num_queries = FLAGS_num_queries;
   int seed = FLAGS_seed;
@@ -49,7 +48,7 @@ int main(int argc, char *argv[]) {
 
   if (query_type == "point-contains") {
     auto queries =
-        GeneratePointQueries(geoms, max_points_per_box, num_queries, seed);
+        GeneratePointQueries(geoms, num_queries, seed);
 
     DumpBoxes(output, queries);
   } else if (query_type == "range-contains") {

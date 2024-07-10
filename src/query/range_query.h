@@ -24,8 +24,6 @@ time_stat RunRangeQuery(const std::vector<box_t> &boxes,
   ts.load_ms = sw.ms();
   std::vector<box_t> results;
 
-  std::cout << "Run" << std::endl;
-
   sw.start();
   for (auto &q : queries) {
     switch (query_type) {
@@ -97,6 +95,9 @@ time_stat RunParallelRangeQuery(const std::vector<box_t> &boxes,
           }
         },
         tid));
+  }
+  for (auto &thread : threads) {
+    thread.join();
   }
   sw.stop();
   ts.query_ms = sw.ms();

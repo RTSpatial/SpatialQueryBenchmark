@@ -11,4 +11,4 @@ DEFINE_string(query, "", "path of query file in wkt format");
 DEFINE_int32(limit, -1, "Read first limit lines");
 DEFINE_string(query_type, "", "point-contains/range-contains/range-intersects");
 DEFINE_int32(seed, 0, "random seed");
-DEFINE_string(index_type, "", "rtree/glin/lbvh");
+DEFINE_string(index_type, "", "rtree/rtree-parallel/glin/lbvh");

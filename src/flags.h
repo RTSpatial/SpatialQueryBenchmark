@@ -9,7 +9,6 @@ DECLARE_string(geom);
 DECLARE_string(query);
 DECLARE_int32(limit);
 DECLARE_int32(min_qualified);
-DECLARE_int32(max_point_in_box);
 DECLARE_int32(num_queries);
 DECLARE_string(query_type);
 DECLARE_int32(seed);

@@ -17,7 +17,6 @@
  * @return
  */
 std::vector<point_t> GeneratePointQueries(const std::vector<box_t> &data,
-                                          size_t max_points_per_box,
                                           size_t num_queries, int seed = 0) {
   boost::geometry::index::rtree<box_t, boost::geometry::index::rstar<16>,
                                 boost::geometry::index::indexable<box_t>>
@@ -29,7 +28,6 @@ std::vector<point_t> GeneratePointQueries(const std::vector<box_t> &data,
                                                 max_point.get<0>());
   std::uniform_real_distribution<double> dist_y(min_point.get<1>(),
                                                 max_point.get<1>());
-  std::uniform_int_distribution<size_t> dist_num_points(1, max_points_per_box);
   std::vector<point_t> queries;
 
   for (size_t i = 0; i < num_queries; i++) {
@@ -43,13 +41,9 @@ std::vector<point_t> GeneratePointQueries(const std::vector<box_t> &data,
                       b.min_corner().x(), b.max_corner().x());
                   std::uniform_real_distribution<double> dist_box_y(
                       b.min_corner().y(), b.max_corner().y());
-                  size_t n_points_in_box = dist_num_points(mt);
 
-                  for (int j = 0; j < n_points_in_box; j++) {
-                    point_t point_in_box(dist_box_x(mt), dist_box_y(mt));
-
-                    queries.push_back(point_in_box);
-                  }
+                  point_t point_in_box(dist_box_x(mt), dist_box_y(mt));
+                  queries.push_back(point_in_box);
                 }));
   }
 
