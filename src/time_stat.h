@@ -4,11 +4,10 @@
 #include <stdlib.h>
 
 struct time_stat {
-  double load_ms = 0;
-  double query_ms = 0;
-  double insert_ms = 0;
-  double delete_ms = 0;
-  double update_ms = 0;
+  std::vector<double> query_ms;
+  std::vector<double> insert_ms;
+  std::vector<double> delete_ms;
+  std::vector<double> update_ms;
   size_t num_geoms = 0;
   size_t num_queries = 0;
   size_t num_results = 0;

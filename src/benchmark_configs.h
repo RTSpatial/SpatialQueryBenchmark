@@ -3,28 +3,38 @@
 #define SPATIALQUERYBENCHMARK_CONFIGS_H
 #include "flags.h"
 #include <iostream>
+#include <limits>
 #include <string>
 #include <unistd.h>
 
 struct BenchmarkConfig {
   enum class QueryType { kPointContains, kRangeContains, kRangeIntersects };
 
-  enum class IndexType { kRTree, kRTreeParallel, kGLIN, kLBVH };
+  enum class IndexType { kRTree, kRTreeParallel, kRTSpatial, kGLIN, kLBVH };
 
   std::string geom;
   std::string query;
+  std::string serialize;
+  int warmup;
+  int repeat;
   int limit;
   int seed;
   QueryType query_type;
   IndexType index_type;
+  float load_factor;
 
   static BenchmarkConfig GetConfig() {
     BenchmarkConfig config;
 
     config.geom = FLAGS_geom;
     config.query = FLAGS_query;
+    config.serialize = FLAGS_serialize;
+    config.warmup = FLAGS_warmup;
+    config.repeat = FLAGS_repeat;
+    config.load_factor = FLAGS_load_factor;
     config.limit = FLAGS_limit;
     config.seed = FLAGS_seed;
+    config.repeat = FLAGS_repeat;
 
     if (config.limit == -1) {
       config.limit = std::numeric_limits<int>::max();
@@ -55,6 +65,8 @@ struct BenchmarkConfig {
       config.index_type = IndexType::kRTree;
     } else if (FLAGS_index_type == "rtree-parallel") {
       config.index_type = IndexType::kRTreeParallel;
+    } else if (FLAGS_index_type == "rtspatial") {
+      config.index_type = IndexType::kRTSpatial;
     } else if (FLAGS_index_type == "glin") {
       config.index_type = IndexType::kGLIN;
     } else if (FLAGS_index_type == "lbvh") {

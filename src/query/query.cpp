@@ -4,10 +4,13 @@
 #include <iostream>
 
 #include "benchmark_configs.h"
+#include "boost/point_query.h"
+#include "boost/range_query.h"
 #include "flags.h"
-#include "loader.h"
-#include "point_query.h"
-#include "range_query.h"
+#include "query/glin/point_query.h"
+#include "query/glin/range_query.h"
+#include "query/rtspatial/point_query.h"
+#include "query/rtspatial/range_query.h"
 
 template <typename GEOM_T>
 void DumpBoxes(const std::string &output, const std::vector<GEOM_T> &geoms) {
@@ -20,6 +23,16 @@ void DumpBoxes(const std::string &output, const std::vector<GEOM_T> &geoms) {
   ofs.close();
 }
 
+double GetAverageTime(const std::vector<double> &times,
+                      const BenchmarkConfig &config) {
+  double total_time = 0;
+
+  for (int i = config.warmup; i < times.size(); i++) {
+    total_time += times[i];
+  }
+  return total_time / config.repeat;
+}
+
 int main(int argc, char *argv[]) {
   gflags::SetUsageMessage("Usage: ");
   if (argc == 1) {
@@ -30,7 +43,7 @@ int main(int argc, char *argv[]) {
 
   auto conf = BenchmarkConfig::GetConfig();
 
-  auto geoms = LoadBoxes(conf.geom, conf.limit);
+  auto geoms = LoadBoxes(conf.geom, conf.serialize, conf.limit);
   std::cout << "Loaded geometries " << geoms.size() << std::endl;
   time_stat ts;
 
@@ -40,12 +53,16 @@ int main(int argc, char *argv[]) {
 
     switch (conf.index_type) {
     case BenchmarkConfig::IndexType::kRTree:
-      ts = RunPointQuery(geoms, queries);
+      ts = RunPointQueryBoost(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kRTreeParallel:
-      ts = RunParallelPointQuery(geoms, queries);
+      ts = RunParallelPointQueryBoost(geoms, queries, conf);
+      break;
+    case BenchmarkConfig::IndexType::kRTSpatial:
+      ts = RunPointQueryRTSpatial(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kGLIN:
+      ts = RunPointQueryGLIN(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kLBVH:
       break;
@@ -59,12 +76,16 @@ int main(int argc, char *argv[]) {
     switch (conf.index_type) {
     case BenchmarkConfig::IndexType::kRTree:
       // TODO: passing predicate as a parameter
-      ts = RunRangeQuery(geoms, queries, conf.query_type);
+      ts = RunRangeQueryBoost(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kRTreeParallel:
-      ts = RunParallelRangeQuery(geoms, queries, conf.query_type);
+      ts = RunParallelRangeQueryBoost(geoms, queries, conf);
+      break;
+    case BenchmarkConfig::IndexType::kRTSpatial:
+      ts = RunRangeQueryRTSpatial(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kGLIN:
+      ts = RunRangeQueryGLIN(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kLBVH:
       break;
@@ -72,15 +93,23 @@ int main(int argc, char *argv[]) {
     break;
   }
 
-  if (ts.load_ms > 0) {
-    std::cout << "Loading Time " << ts.load_ms << " ms" << std::endl;
+  if (!ts.insert_ms.empty()) {
+    std::cout << "Loading Time " << GetAverageTime(ts.insert_ms, conf) << " ms"
+              << std::endl;
   }
 
-  if (ts.query_ms > 0) {
+  if (!ts.query_ms.empty()) {
     std::cout << "Geoms " << ts.num_geoms << std::endl;
+    if (ts.num_threads > 0) {
+      std::cout << "Threads " << ts.num_threads << std::endl;
+    }
     std::cout << "Queries " << ts.num_queries << std::endl;
-    std::cout << "Query Time " << ts.query_ms << " ms" << std::endl;
+    std::cout << "Query Time " << GetAverageTime(ts.query_ms, conf) << " ms"
+              << std::endl;
     std::cout << "Results " << ts.num_results << std::endl;
+    std::cout << "Selectivity: "
+              << (double)ts.num_results / (ts.num_queries * ts.num_geoms)
+              << std::endl;
   }
 
   gflags::ShutDownCommandLineFlags();

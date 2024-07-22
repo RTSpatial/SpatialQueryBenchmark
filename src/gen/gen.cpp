@@ -12,7 +12,7 @@ void DumpBoxes(const std::string &output, const std::vector<GEOM_T> &geoms) {
   std::ofstream ofs(output);
 
   for (auto &geom : geoms) {
-    ofs << boost::geometry::to_wkt(geom) << "\n";
+    ofs << boost::geometry::to_wkt(geom, 14) << "\n";
   }
 
   ofs.close();
@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
   std::string query_type = FLAGS_query_type;
   int limit = FLAGS_limit;
   int min_qualified = FLAGS_min_qualified;
+  float selectivity = FLAGS_selectivity;
   int num_queries = FLAGS_num_queries;
   int seed = FLAGS_seed;
 
@@ -46,9 +47,14 @@ int main(int argc, char *argv[]) {
   auto geoms = LoadBoxes(FLAGS_input, limit);
   std::cout << "Loaded geometries " << geoms.size() << std::endl;
 
+  if (min_qualified == -1) {
+    min_qualified = std::max(1ul, (size_t)(geoms.size() * selectivity));
+    std::cout << "Selectivity " << selectivity << ", Min qualified per query "
+              << min_qualified << std::endl;
+  }
+
   if (query_type == "point-contains") {
-    auto queries =
-        GeneratePointQueries(geoms, num_queries, seed);
+    auto queries = GeneratePointQueries(geoms, num_queries, seed);
 
     DumpBoxes(output, queries);
   } else if (query_type == "range-contains") {
@@ -59,6 +65,8 @@ int main(int argc, char *argv[]) {
     auto queries =
         GenerateIntersectsQueries(geoms, min_qualified, num_queries, seed);
 
+    //    auto queries = GenerateUniformQueries(geoms, 0.001, num_queries,
+    //    seed);
     DumpBoxes(output, queries);
   } else {
     std::cerr << "Not supported query type: " << FLAGS_query_type << std::endl;
