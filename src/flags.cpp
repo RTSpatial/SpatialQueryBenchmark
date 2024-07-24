@@ -19,4 +19,5 @@ DEFINE_int32(limit, -1, "Read first limit lines");
 DEFINE_string(query_type, "", "point-contains/range-contains/range-intersects");
 DEFINE_int32(seed, 0, "random seed");
 DEFINE_string(index_type, "", "rtree/rtree-parallel/glin/lbvh");
-DEFINE_int32(rays, 500, "duplicated rays");
+DEFINE_int32(parallelism, -1, "#of cores for CPU baselines");
+DEFINE_bool(avg_time, true, "Report average time or list all times");

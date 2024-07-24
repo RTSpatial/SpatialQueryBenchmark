@@ -18,5 +18,6 @@ DECLARE_int32(num_queries);
 DECLARE_string(query_type);
 DECLARE_int32(seed);
 DECLARE_string(index_type);
-DECLARE_int32(rays);
+DECLARE_int32(parallelism);
+DECLARE_bool(avg_time);
 #endif // SPATIALQUERYBENCHMARK_FLAGS_H

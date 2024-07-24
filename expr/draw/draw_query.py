@@ -3,13 +3,10 @@ from matplotlib.scale import LogScale
 import os
 import numpy as np
 # import comm_settings
+from common import datasets,dataset_labels
 import sys
 import re
 import pandas as pd
-
-datasets = ("dtl_cnty.wkt.log", "USACensusBlockGroupBoundaries.wkt.log", "USADetailedWaterBodies.wkt.log",
-            "parks_Europe.wkt.log")
-dataset_labels = ("USCounty", "USACensus", "USAWater", "EuropeParks")
 
 
 def get_running_time(prefix, datasets):
@@ -61,7 +58,7 @@ def draw_build_time(prefix):
 
 
 def draw_query(prefix):
-    index_types = ("rtree", "rtree-parallel", "rtspatial")
+    index_types = ("rtree-parallel", "rtspatial")
     loc = [x for x in range(len(dataset_labels))]
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4.5))
 
@@ -87,7 +84,7 @@ def draw_query(prefix):
     ax.set_xticks(loc, dataset_labels, rotation=0)
     ax.set_xlabel("Datasets")
     ax.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
-    ax.set_yscale('log')
+    # ax.set_yscale('log')
     ax.margins(x=0.05, y=0.35)
 
     fig.tight_layout()
@@ -102,4 +99,4 @@ if __name__ == '__main__':
     # draw_build_time(os.path.join(dir + "/point-contains_point-contains_queries_100000"))
     # draw_query(os.path.join(dir + "/point-contains_point-contains_queries_100000"))
     # draw_query(os.path.join(dir + "/range-contains_queries_100000"))
-    draw_query(os.path.join(dir + "/range-intersects_qualified_1_queries_100000"))
+    draw_query(os.path.join(dir + "/range-intersects_select_0.01_queries_100000"))

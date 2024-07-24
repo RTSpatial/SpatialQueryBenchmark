@@ -84,6 +84,9 @@ int main(int argc, char *argv[]) {
     case BenchmarkConfig::IndexType::kRTSpatial:
       ts = RunRangeQueryRTSpatial(geoms, queries, conf);
       break;
+    case BenchmarkConfig::IndexType::kRTSpatialVaryParallelism:
+      ts = RunRangeQueryRTSpatialVaryParallelism(geoms, queries, conf);
+      break;
     case BenchmarkConfig::IndexType::kGLIN:
       ts = RunRangeQueryGLIN(geoms, queries, conf);
       break;
@@ -100,12 +103,17 @@ int main(int argc, char *argv[]) {
 
   if (!ts.query_ms.empty()) {
     std::cout << "Geoms " << ts.num_geoms << std::endl;
-    if (ts.num_threads > 0) {
-      std::cout << "Threads " << ts.num_threads << std::endl;
-    }
     std::cout << "Queries " << ts.num_queries << std::endl;
-    std::cout << "Query Time " << GetAverageTime(ts.query_ms, conf) << " ms"
-              << std::endl;
+    if (conf.avg_time) {
+
+      std::cout << "Query Time " << GetAverageTime(ts.query_ms, conf) << " ms"
+                << std::endl;
+    } else {
+      for (size_t i = 0; i < ts.query_ms.size(); i++) {
+        std::cout << i << ", Query Time " << ts.query_ms[i] << " ms"
+                  << std::endl;
+      }
+    }
     std::cout << "Results " << ts.num_results << std::endl;
     std::cout << "Selectivity: "
               << (double)ts.num_results / (ts.num_queries * ts.num_geoms)

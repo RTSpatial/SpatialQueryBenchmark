@@ -14,7 +14,6 @@ struct time_stat {
   size_t num_inserts = 0;
   size_t num_deletes = 0;
   size_t num_updates = 0;
-  size_t num_threads = 0;
 };
 
 #endif // SPATIALQUERYBENCHMARK_TIME_STAT_H

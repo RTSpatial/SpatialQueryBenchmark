@@ -5,12 +5,20 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <thread>
 #include <unistd.h>
 
 struct BenchmarkConfig {
   enum class QueryType { kPointContains, kRangeContains, kRangeIntersects };
 
-  enum class IndexType { kRTree, kRTreeParallel, kRTSpatial, kGLIN, kLBVH };
+  enum class IndexType {
+    kRTree,
+    kRTreeParallel,
+    kRTSpatial,
+    kGLIN,
+    kLBVH,
+    kRTSpatialVaryParallelism
+  };
 
   std::string geom;
   std::string query;
@@ -19,6 +27,8 @@ struct BenchmarkConfig {
   int repeat;
   int limit;
   int seed;
+  int parallelism;
+  bool avg_time;
   QueryType query_type;
   IndexType index_type;
   float load_factor;
@@ -35,9 +45,15 @@ struct BenchmarkConfig {
     config.limit = FLAGS_limit;
     config.seed = FLAGS_seed;
     config.repeat = FLAGS_repeat;
+    config.parallelism = FLAGS_parallelism;
+    config.avg_time = FLAGS_avg_time;
 
     if (config.limit == -1) {
       config.limit = std::numeric_limits<int>::max();
+    }
+
+    if (config.parallelism == -1) {
+      config.parallelism = std::thread::hardware_concurrency();
     }
 
     if (access(config.geom.c_str(), R_OK) != 0) {
@@ -67,6 +83,8 @@ struct BenchmarkConfig {
       config.index_type = IndexType::kRTreeParallel;
     } else if (FLAGS_index_type == "rtspatial") {
       config.index_type = IndexType::kRTSpatial;
+    } else if (FLAGS_index_type == "rtspatial-vary-parallelism") {
+      config.index_type = IndexType::kRTSpatialVaryParallelism;
     } else if (FLAGS_index_type == "glin") {
       config.index_type = IndexType::kGLIN;
     } else if (FLAGS_index_type == "lbvh") {

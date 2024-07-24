@@ -17,10 +17,6 @@ time_stat RunRangeQueryBoost(const std::vector<box_t> &boxes,
   boost::geometry::index::rtree<box_t, boost::geometry::index::rstar<16>,
                                 boost::geometry::index::indexable<box_t>>
       rtree;
-  std::vector<box_t> results;
-
-//  results.reserve(std::max(
-//      1ul, size_t(boxes.size() * queries.size() * config.load_factor)));
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     rtree.clear();
@@ -31,21 +27,21 @@ time_stat RunRangeQueryBoost(const std::vector<box_t> &boxes,
   }
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
-    results.clear();
+    ts.num_results = 0;
     sw.start();
 
     for (auto &q : queries) {
       switch (config.query_type) {
       case BenchmarkConfig::QueryType::kRangeContains: {
-        auto before = results.size();
         rtree.query(boost::geometry::index::contains(q),
-                    std::back_inserter(results));
+                    boost::make_function_output_iterator(
+                        [&](const box_t &b) { ts.num_results++; }));
         break;
       }
       case BenchmarkConfig::QueryType::kRangeIntersects: {
-        auto before_size = results.size();
         rtree.query(boost::geometry::index::intersects(q),
-                    std::back_inserter(results));
+                    boost::make_function_output_iterator(
+                        [&](const box_t &b) { ts.num_results++; }));
         break;
       }
       default:
@@ -55,7 +51,6 @@ time_stat RunRangeQueryBoost(const std::vector<box_t> &boxes,
     sw.stop();
     ts.query_ms.push_back(sw.ms());
   }
-  ts.num_results = results.size();
 
   return ts;
 }
@@ -68,15 +63,10 @@ time_stat RunParallelRangeQueryBoost(const std::vector<box_t> &boxes,
 
   ts.num_geoms = boxes.size();
   ts.num_queries = queries.size();
-  ts.num_threads = std::thread::hardware_concurrency();
 
   boost::geometry::index::rtree<box_t, boost::geometry::index::rstar<16>,
                                 boost::geometry::index::indexable<box_t>>
       rtree;
-  std::vector<box_t> results;
-
-//  results.reserve(std::max(
-//      1ul, size_t(boxes.size() * queries.size() * config.load_factor)));
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     rtree.clear();
@@ -87,48 +77,48 @@ time_stat RunParallelRangeQueryBoost(const std::vector<box_t> &boxes,
   }
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
-    size_t avg_queries = (ts.num_queries + ts.num_threads - 1) / ts.num_threads;
+    size_t avg_queries =
+        (ts.num_queries + config.parallelism - 1) / config.parallelism;
     std::vector<std::thread> threads;
-    std::mutex mu;
-    results.clear();
+    std::atomic_uint64_t total_num_results;
 
     sw.start();
-    for (size_t tid = 0; tid < ts.num_threads; tid++) {
+    ts.num_results = 0;
+    total_num_results = 0;
+    for (int tid = 0; tid < config.parallelism; tid++) {
       threads.emplace_back(
-          [&](size_t tid) {
+          [&](int tid) {
             auto begin = std::min(tid * avg_queries, ts.num_queries);
             auto end = std::min(begin + avg_queries, ts.num_queries);
-            std::vector<box_t> local_results;
+            size_t num_results = 0;
 
             for (auto i = begin; i < end; i++) {
               auto &q = queries[i];
               switch (config.query_type) {
               case BenchmarkConfig::QueryType::kRangeContains:
                 rtree.query(boost::geometry::index::contains(q),
-                            std::back_inserter(local_results));
+                            boost::make_function_output_iterator(
+                                [&](const box_t &b) { num_results++; }));
                 break;
               case BenchmarkConfig::QueryType::kRangeIntersects:
                 rtree.query(boost::geometry::index::intersects(q),
-                            std::back_inserter(local_results));
+                            boost::make_function_output_iterator(
+                                [&](const box_t &b) { num_results++; }));
                 break;
               default:
                 abort();
               }
             }
-            {
-              std::unique_lock<std::mutex> lock(mu);
-              results.insert(results.end(), local_results.begin(),
-                             local_results.end());
-            }
+            total_num_results += num_results;
           },
           tid);
     }
     for (auto &thread : threads) {
       thread.join();
     }
+    ts.num_results = total_num_results;
     sw.stop();
     ts.query_ms.push_back(sw.ms());
-    ts.num_results = results.size();
   }
 
   return ts;
