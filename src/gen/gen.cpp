@@ -1,5 +1,3 @@
-#include <glog/logging.h>
-
 #include <algorithm>
 #include <iostream>
 

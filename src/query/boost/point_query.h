@@ -19,69 +19,6 @@ time_stat RunPointQueryBoost(const std::vector<box_t> &boxes,
   boost::geometry::index::rtree<box_t, boost::geometry::index::rstar<16>,
                                 boost::geometry::index::indexable<box_t>>
       rtree;
-#ifdef COLLECT_RESULTS
-  std::vector<box_t> results;
-#endif
-
-#ifdef COUNT_RESULTS
-  size_t counter;
-#endif
-
-  for (int i = 0; i < config.warmup + config.repeat; i++) {
-    rtree.clear();
-    sw.start();
-    rtree.insert(boxes);
-    sw.stop();
-    ts.insert_ms.push_back(sw.ms());
-  }
-
-  for (int i = 0; i < config.warmup + config.repeat; i++) {
-#ifdef COLLECT_RESULTS
-    results.clear();
-#endif
-
-#ifdef COUNT_RESULTS
-    counter = 0;
-#endif
-    sw.start();
-    for (auto &p : queries) {
-#ifdef COLLECT_RESULTS
-      rtree.query(boost::geometry::index::contains(p),
-                  std::back_inserter(results));
-#endif
-
-#ifdef COUNT_RESULTS
-      rtree.query(boost::geometry::index::contains(p),
-                  boost::make_function_output_iterator(
-                      [&](const box_t &b) { ts.num_results++; }));
-#endif
-    }
-    sw.stop();
-    ts.query_ms.push_back(sw.ms());
-#ifdef COLLECT_RESULTS
-    ts.num_results = results.size();
-#endif
-
-#ifdef COUNT_RESULTS
-    ts.num_results = counter;
-#endif
-  }
-
-  return ts;
-}
-
-time_stat RunParallelPointQueryBoost(const std::vector<box_t> &boxes,
-                                     const std::vector<point_t> &queries,
-                                     const BenchmarkConfig &config) {
-  Stopwatch sw;
-  time_stat ts;
-
-  ts.num_geoms = boxes.size();
-  ts.num_queries = queries.size();
-
-  boost::geometry::index::rtree<box_t, boost::geometry::index::rstar<16>,
-                                boost::geometry::index::indexable<box_t>>
-      rtree;
 
 #ifdef COLLECT_RESULTS
   std::vector<box_t> results;

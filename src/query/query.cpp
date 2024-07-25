@@ -1,5 +1,3 @@
-#include <glog/logging.h>
-
 #include <algorithm>
 #include <iostream>
 
@@ -8,11 +6,12 @@
 #include "boost/range_query.h"
 
 #include "query/glin/range_query.h"
+#ifdef USE_GPU
 #include "query/lbvh/point_query.h"
 #include "query/lbvh/range_query.h"
 #include "query/rtspatial/point_query.h"
 #include "query/rtspatial/range_query.h"
-
+#endif
 #include "flags.h"
 
 template <typename GEOM_T>
@@ -58,20 +57,24 @@ int main(int argc, char *argv[]) {
     case BenchmarkConfig::IndexType::kRTree:
       ts = RunPointQueryBoost(geoms, queries, conf);
       break;
-    case BenchmarkConfig::IndexType::kRTreeParallel:
-      ts = RunParallelPointQueryBoost(geoms, queries, conf);
-      break;
+#ifdef USE_GPU
     case BenchmarkConfig::IndexType::kRTSpatial:
       ts = RunPointQueryRTSpatial(geoms, queries, conf);
       break;
+#endif
     case BenchmarkConfig::IndexType::kGLIN:
       //      ts = RunPointQueryGLIN(geoms, queries, conf);
       std::cout << "Unsupported" << std::endl;
       abort();
       break;
+#ifdef USE_GPU
     case BenchmarkConfig::IndexType::kLBVH:
       ts = RunPointQueryLBVH(geoms, queries, conf);
       break;
+#endif
+    default:
+      std::cerr << "Invalid Index Type" << std::endl;
+      abort();
     }
     break;
   }
@@ -81,24 +84,27 @@ int main(int argc, char *argv[]) {
 
     switch (conf.index_type) {
     case BenchmarkConfig::IndexType::kRTree:
-      // TODO: passing predicate as a parameter
       ts = RunRangeQueryBoost(geoms, queries, conf);
       break;
-    case BenchmarkConfig::IndexType::kRTreeParallel:
-      ts = RunParallelRangeQueryBoost(geoms, queries, conf);
-      break;
+#ifdef USE_GPU
     case BenchmarkConfig::IndexType::kRTSpatial:
       ts = RunRangeQueryRTSpatial(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kRTSpatialVaryParallelism:
       ts = RunRangeQueryRTSpatialVaryParallelism(geoms, queries, conf);
       break;
+#endif
     case BenchmarkConfig::IndexType::kGLIN:
       ts = RunRangeQueryGLIN(geoms, queries, conf);
       break;
+#ifdef USE_GPU
     case BenchmarkConfig::IndexType::kLBVH:
       ts = RunRangeQueryLBVH(geoms, queries, conf);
       break;
+#endif
+    default:
+      std::cerr << "Invalid Index Type" << std::endl;
+      abort();
     }
     break;
   }

@@ -29,11 +29,15 @@ namespace alex {
     class Glin : public Alex<T, P, Compare, Alloc, allow_duplicates> {
 
     public:
+        Glin() : piece_(true) {}
+
+        explicit Glin(bool piece):piece_(piece) {}
+
         std::chrono::nanoseconds index_probe_duration = std::chrono::nanoseconds::zero();
         std::chrono::nanoseconds index_refine_duration = std::chrono::nanoseconds::zero();
         double avg_num_visited_leaf = 0.0;
         double avg_num_loaded_leaf = 0.0;
-
+        bool piece_;
 /*
  * line segment creation
  */
@@ -124,10 +128,9 @@ namespace alex {
                 new_values[i].first = min;
                 new_values[i].second = geom[i];
             }
-#ifdef PIECE
-            piecewise(values, num_of_keys, pieceLimitation, pieces);
-#endif
-
+if(piece_) {
+              piecewise(values, num_of_keys, pieceLimitation, pieces);
+            }
             delete[] values;
             // sort by start point
             std::sort(new_values, new_values + num_of_keys);
@@ -296,20 +299,28 @@ namespace alex {
             curve_shape_projection(query_window, curve_type, cell_xmin, cell_ymin, cell_x_intvl, cell_y_intvl,
                                    min_start, max_end);
             //   std::cout << "find poly start" << min_start << " find poly end " << max_end << endl;
-#ifdef PIECE
-            // use current end point to search which bucket the records belong to
-            std::vector<std::tuple<double, double, double, double>>::iterator it;
-            it = std::lower_bound(pieces.begin(), pieces.end(), std::make_tuple(min_start, -1, -1, -1), sortbysec);
-            // The min function here is to make sure that the iterator never reaches the end of the pieces vector even if
-            // the query window itself may exceed the max end point of pieces
-            double start_augment_zmin = std::numeric_limits<double>::max();
-//            // Should always check the max range of the upper bound
-            while (it != pieces.end()) {
-                start_augment_zmin = std::min(start_augment_zmin, std::get<1>(pieces[it - pieces.begin()]));
+    if(piece_) {
+              // use current end point to search which bucket the records belong
+              // to
+              std::vector<std::tuple<double, double, double, double>>::iterator
+                  it;
+              it = std::lower_bound(pieces.begin(), pieces.end(),
+                                    std::make_tuple(min_start, -1, -1, -1),
+                                    sortbysec);
+              // The min function here is to make sure that the iterator never
+              // reaches the end of the pieces vector even if the query window
+              // itself may exceed the max end point of pieces
+              double start_augment_zmin = std::numeric_limits<double>::max();
+              //            // Should always check the max range of the upper
+              //            bound
+              while (it != pieces.end()) {
+                start_augment_zmin =
+                    std::min(start_augment_zmin,
+                             std::get<1>(pieces[it - pieces.begin()]));
                 it++;
+              }
+              min_start = start_augment_zmin;
             }
-            min_start = start_augment_zmin;
-#endif
 #ifdef DEBUG
             std::cout<< "the current end is " <<current_end << "current pieces is " <<  std::get<0>(pieces[up - pieces.begin() ]) <<"current piece -1 is" <<  std::get<0>(pieces[(up - pieces.begin() - 1)]) << endl;
             assert(current_end <= std::get<0>(pieces[up - pieces.begin() ]));
@@ -378,15 +389,17 @@ namespace alex {
             geos::geom::Envelope env_query_window = *query_window->getEnvelopeInternal();
             for (it = it_start; it.cur_leaf_ != nullptr && it.key() <= max_end; it.it_check_mbr(&env_query_window, max_end)) {
                 geos::geom::Geometry *payload = it.payload();
-#ifdef PIECE
-                if (query_window->intersects(payload)) {
+      if(piece_)
+                {
+                  if (query_window->intersects(payload)) {
                     find_result.push_back(payload);
-                }
-#else
-                if(query_window->contains(payload)){
-                    find_result.push_back(payload);
-                }
-#endif
+                  }
+                } else {
+
+  if (query_window->contains(payload)) {
+    find_result.push_back(payload);
+  }
+}
                 //count all geometries after the probe
                 count_filter += 1;
             }
@@ -415,9 +428,10 @@ namespace alex {
             auto res_start = alex::Alex<T, P>::insert(range_start, geometry);
             //upper postion
             // search which bucket the records belong to
-#ifdef PIECE
-            insert_pieces(range_start, range_end, error_bound, pieces);
-#endif
+            if(piece_)
+            {
+              insert_pieces(range_start, range_end, error_bound, pieces);
+            }
             return res_start;
         }
 
@@ -439,9 +453,9 @@ namespace alex {
 
             res_start.first.cur_leaf_->mbr.expandToInclude(envelope);
             // search which bucket the records belong to
-#ifdef PIECE
-            insert_pieces(range_start, range_end, pieceLimit, pieces);
-#endif
+            if(piece_) {
+              insert_pieces(range_start, range_end, pieceLimit, pieces);
+            }
             return res_start;
         }
 
@@ -558,14 +572,19 @@ namespace alex {
             int num_erase = alex::Alex<T, P>::erase_geo(del_start, envelope);
             // find the position of erase key
             std::vector<std::tuple<double, double, double, double>>::iterator erase_position;
-#ifdef PIECE
-            erase_position = std::upper_bound(pieces.begin(), pieces.end(), std::make_tuple(del_end, -1, -1, -1),
-                                              sortbysec);
-            double update_count = std::get<2>(pieces[erase_position - pieces.begin()]) - 1;
-            double update_sum = (std::get<3>(pieces[erase_position - pieces.begin()])) -  del_start;
-            std::get<2>(pieces[erase_position - pieces.begin()]) = update_count;
-            std::get<3>(pieces[erase_position - pieces.begin()]) = update_sum;
-#endif
+            if(piece_) {
+              erase_position = std::upper_bound(
+                  pieces.begin(), pieces.end(),
+                  std::make_tuple(del_end, -1, -1, -1), sortbysec);
+              double update_count =
+                  std::get<2>(pieces[erase_position - pieces.begin()]) - 1;
+              double update_sum =
+                  (std::get<3>(pieces[erase_position - pieces.begin()])) -
+                  del_start;
+              std::get<2>(pieces[erase_position - pieces.begin()]) =
+                  update_count;
+              std::get<3>(pieces[erase_position - pieces.begin()]) = update_sum;
+            }
             return num_erase;
         }
     };

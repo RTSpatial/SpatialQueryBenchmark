@@ -12,11 +12,10 @@ struct BenchmarkConfig {
   enum class QueryType { kPointContains, kRangeContains, kRangeIntersects };
 
   enum class IndexType {
-    kRTree,
-    kRTreeParallel,
-    kRTSpatial,
     kGLIN,
     kLBVH,
+    kRTree,
+    kRTSpatial,
     kRTSpatialVaryParallelism
   };
 
@@ -79,8 +78,6 @@ struct BenchmarkConfig {
 
     if (FLAGS_index_type == "rtree") {
       config.index_type = IndexType::kRTree;
-    } else if (FLAGS_index_type == "rtree-parallel") {
-      config.index_type = IndexType::kRTreeParallel;
     } else if (FLAGS_index_type == "rtspatial") {
       config.index_type = IndexType::kRTSpatial;
     } else if (FLAGS_index_type == "rtspatial-vary-parallelism") {
