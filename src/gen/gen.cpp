@@ -45,12 +45,6 @@ int main(int argc, char *argv[]) {
   auto geoms = LoadBoxes(FLAGS_input, limit);
   std::cout << "Loaded geometries " << geoms.size() << std::endl;
 
-  if (min_qualified == -1) {
-    min_qualified = std::max(1ul, (size_t)(geoms.size() * selectivity));
-    std::cout << "Selectivity " << selectivity << ", Min qualified per query "
-              << min_qualified << std::endl;
-  }
-
   if (query_type == "point-contains") {
     auto queries = GeneratePointQueries(geoms, num_queries, seed);
 
@@ -60,6 +54,11 @@ int main(int argc, char *argv[]) {
 
     DumpBoxes(output, queries);
   } else if (query_type == "range-intersects") {
+    if (min_qualified == -1) {
+      min_qualified = std::max(1ul, (size_t)(geoms.size() * selectivity));
+      std::cout << "Selectivity " << selectivity << ", Min qualified per query "
+                << min_qualified << std::endl;
+    }
     auto queries =
         GenerateIntersectsQueries(geoms, min_qualified, num_queries, seed);
 
