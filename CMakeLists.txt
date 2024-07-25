@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(SpatialQueryBenchmark LANGUAGES CUDA C CXX)
+project(SpatialQueryBenchmark LANGUAGES C CXX)
 
 option(USE_GPU "Find CUDA if enabled" ON)
 
@@ -15,8 +15,10 @@ else ()
     include_directories(SYSTEM ${GFLAGS_INCLUDE_DIRS})
 endif ()
 find_package(Boost 1.76 REQUIRED COMPONENTS serialization)
+find_package(CGAL REQUIRED)
 
 if (USE_GPU)
+    enable_language(CUDA)
     add_compile_definitions(-DUSE_GPU)
     find_package(rtspatial REQUIRED)
 
@@ -59,7 +61,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 
 include_directories(src)
 add_executable(gen src/gen/gen.cpp src/flags.cpp)
-target_link_libraries(gen ${GFLAGS_LIBRARIES})
+target_link_libraries(gen ${GFLAGS_LIBRARIES} boost_serialization)
 
 add_library(glin thirdparty/GLIN/glin/hilbert/hilbert.cpp)
 
@@ -74,7 +76,7 @@ add_executable(query_collecting src/query/query.cpp
         src/flags.cpp
         ${PROGRAM_MODULES_COLLECTING})
 target_compile_definitions(query_collecting PRIVATE PIECE) # GLIN requires for intersects query
-target_link_libraries(query_collecting pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(query_collecting pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} boost_serialization)
 target_compile_definitions(query_collecting PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/collecting_ptx\" -DCOLLECT_RESULTS)
 if (USE_GPU)
     target_compile_options(query_collecting PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
@@ -86,7 +88,7 @@ add_executable(query_counting src/query/query.cpp
         src/flags.cpp
         ${PROGRAM_MODULES_COUNTING})
 target_compile_definitions(query_counting PRIVATE PIECE) # GLIN requires for intersects query
-target_link_libraries(query_counting pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} ${Boost_LIBRARIES})
+target_link_libraries(query_counting pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} boost_serialization)
 target_compile_definitions(query_counting PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/counting_ptx\" -DCOUNT_RESULTS)
 if (USE_GPU)
     target_compile_options(query_counting PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
