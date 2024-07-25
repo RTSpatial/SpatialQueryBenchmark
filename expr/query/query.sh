@@ -29,12 +29,36 @@ function run_point_query_contains() {
       echo "${log}" | xargs dirname | xargs mkdir -p
 
       echo "Running query $query"
-      cmd="${BENCHMARK_ROOT}/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+      cmd="$BENCHMARK_ROOT/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
         -query $query \
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
         -index_type $index_type \
         -load_factor 0.001"
+
+      echo "$cmd" >"${log}.tmp"
+      eval "$cmd" 2>&1 | tee -a "${log}.tmp"
+
+      if grep -q "Query Time" "${log}.tmp"; then
+        mv "${log}.tmp" "${log}"
+      fi
+    fi
+  done
+}
+
+function run_point_query_contains_cuspatial() {
+  query_type="point-contains"
+  index_type="cuspatial"
+  for wkt_file in "${DATASET_WKT_FILES[@]}"; do
+    query_dir="${QUERY_ROOT}/${query_type}_queries_${QUERY_SIZE}"
+    query="${query_dir}/${wkt_file}"
+    log="${log_dir}/${query_type}_${query_type}_queries_${QUERY_SIZE}/${index_type}/${wkt_file}.log"
+
+    if [[ ! -f "${log}" ]]; then
+      echo "${log}" | xargs dirname | xargs mkdir -p
+
+      echo "Running query $query"
+      cmd="python3 ${script_dir}/cuspatial_point_contains.py ${DATASET_ROOT}/polygons/${wkt_file} $query"
 
       echo "$cmd" >"${log}.tmp"
       eval "$cmd" 2>&1 | tee -a "${log}.tmp"
@@ -104,6 +128,8 @@ function run_range_query_intersects() {
     done
   done
 }
+
+run_point_query_contains_cuspatial
 
 for index_type in "rtree" "lbvh" "cgal" "rtspatial"; do
   run_point_query_contains "$index_type"

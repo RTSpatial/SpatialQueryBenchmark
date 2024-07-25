@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export DATASET_ROOT="/local/storage/liang/rtspatial/datasets"
-export SERIALIZE_ROOT="/local/storage/liang/rtspatial/datasets/ser"
+export SERIALIZE_ROOT="/local/storage/liang/rtspatial/ser"
 export QUERY_ROOT="${DATASET_ROOT}/queries"
 export BENCHMARK_ROOT="/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190"
 export DATASET_WKT_FILES=("dtl_cnty.wkt"
