@@ -12,6 +12,7 @@ struct BenchmarkConfig {
   enum class QueryType { kPointContains, kRangeContains, kRangeIntersects };
 
   enum class IndexType {
+    kCGAL,
     kGLIN,
     kLBVH,
     kRTree,
@@ -76,7 +77,9 @@ struct BenchmarkConfig {
       abort();
     }
 
-    if (FLAGS_index_type == "rtree") {
+    if (FLAGS_index_type == "cgal") {
+      config.index_type = IndexType::kCGAL;
+    } else if (FLAGS_index_type == "rtree") {
       config.index_type = IndexType::kRTree;
     } else if (FLAGS_index_type == "rtspatial") {
       config.index_type = IndexType::kRTSpatial;

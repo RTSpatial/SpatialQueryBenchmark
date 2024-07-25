@@ -2,10 +2,11 @@
 #include <iostream>
 
 #include "benchmark_configs.h"
-#include "boost/point_query.h"
-#include "boost/range_query.h"
-
+#include "query/boost/point_query.h"
+#include "query/boost/range_query.h"
+#include "query/cgal/point_query.h"
 #include "query/glin/range_query.h"
+
 #ifdef USE_GPU
 #include "query/lbvh/point_query.h"
 #include "query/lbvh/range_query.h"
@@ -54,6 +55,9 @@ int main(int argc, char *argv[]) {
     auto queries = LoadPoints(conf.query, conf.limit);
 
     switch (conf.index_type) {
+    case BenchmarkConfig::IndexType::kCGAL:
+      ts = RunPointQueryCGAL(geoms, queries, conf);
+      break;
     case BenchmarkConfig::IndexType::kRTree:
       ts = RunPointQueryBoost(geoms, queries, conf);
       break;
