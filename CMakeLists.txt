@@ -31,6 +31,10 @@ add_subdirectory(thirdparty/GLIN)
 include_directories(thirdparty/GLIN)
 include_directories(thirdparty/GLIN/src/core)
 include_directories(${GEOS_INCLUDE_DIR})
+
+# LBVH
+include_directories(thirdparty/lbvh)
+
 # SIMD
 if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /arch:AVX2 /W1 /EHsc")
@@ -57,6 +61,8 @@ set(ENABLED_ARCHS "80")
 add_executable(query_collecting src/query/query.cpp
         src/query/rtspatial/range_query.cu
         src/query/rtspatial/point_query.cu
+        src/query/lbvh/range_query.cu
+        src/query/lbvh/point_query.cu
         src/flags.cpp
         ${PROGRAM_MODULES_COLLECTING})
 target_compile_definitions(query_collecting PRIVATE PIECE) # GLIN requires for intersects query
@@ -69,6 +75,8 @@ set_target_properties(query_collecting PROPERTIES CUDA_ARCHITECTURES "${ENABLED_
 add_executable(query_counting src/query/query.cpp
         src/query/rtspatial/range_query.cu
         src/query/rtspatial/point_query.cu
+        src/query/lbvh/range_query.cu
+        src/query/lbvh/point_query.cu
         src/flags.cpp
         ${PROGRAM_MODULES_COUNTING})
 target_compile_definitions(query_counting PRIVATE PIECE) # GLIN requires for intersects query

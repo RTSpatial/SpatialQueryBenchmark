@@ -3,7 +3,7 @@ from matplotlib.scale import LogScale
 import os
 import numpy as np
 # import comm_settings
-from common import datasets,dataset_labels
+from common import datasets, dataset_labels, hatches
 import sys
 import re
 import pandas as pd
@@ -32,7 +32,7 @@ series_id = 1
 
 
 def draw_build_time(prefix):
-    index_types = ("rtree", "rtspatial")
+    index_types = ("rtree", "rtree-parallel", "rtspatial")
     loc = [x for x in range(len(dataset_labels))]
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4.5))
 
@@ -57,10 +57,11 @@ def draw_build_time(prefix):
     plt.show()
 
 
-def draw_query(prefix):
-    index_types = ("rtree-parallel", "rtspatial")
+def draw_query(prefix, index_types,
+               index_labels,
+               output):
     loc = [x for x in range(len(dataset_labels))]
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4.5))
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4.))
 
     index_loading_time = {}
     index_query_time = {}
@@ -74,22 +75,26 @@ def draw_query(prefix):
     index_loading_time = pd.DataFrame.from_dict(index_loading_time, )
     index_query_time = pd.DataFrame.from_dict(index_query_time, )
 
-    # for i in range(len(datasets)):
-    # query_time = list(index_query_time.iloc[:, i])
-    # ax = axes[i]
-    # ax.bar(loc, query_time)
-    # ax = axes[0]
-    index_query_time.plot(kind="bar", width=0.5, ax=ax)
+    index_query_time.columns = index_labels
+    bars = index_query_time.plot(kind="bar", width=0.5, ax=ax)
+
+    all_hatches = []
+    for i in range(len(index_types)):
+        all_hatches += [hatches[i] for _ in range(len(index_query_time))]
+
+    for idx, patch in enumerate(bars.patches):
+        patch.set_hatch(all_hatches[idx])
 
     ax.set_xticks(loc, dataset_labels, rotation=0)
     ax.set_xlabel("Datasets")
     ax.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
-    # ax.set_yscale('log')
+    ax.set_yscale('log')
     ax.margins(x=0.05, y=0.35)
-
+    ax.legend(loc='upper left', ncol=2, handletextpad=0.3,
+              fontsize=11, borderaxespad=0.2, frameon=False)
     fig.tight_layout()
-    filename = os.path.basename(prefix)
-    fig.savefig(os.path.join(prefix, filename + '_point_query_time.pdf'), format='pdf', bbox_inches='tight')
+
+    fig.savefig(os.path.join(prefix, output), format='pdf', bbox_inches='tight')
     plt.show()
 
 
@@ -97,6 +102,18 @@ if __name__ == '__main__':
     dir = os.path.dirname(sys.argv[0]) + "/../query/logs"
 
     # draw_build_time(os.path.join(dir + "/point-contains_point-contains_queries_100000"))
-    # draw_query(os.path.join(dir + "/point-contains_point-contains_queries_100000"))
+    # draw_query(os.path.join(dir + "/point-contains_point-contains_queries_100000"),
+    #            ("rtree", "rtree-parallel", "lbvh", "rtspatial"),
+    #            ("Boost", "Boost Parallel", "LBVH", "RTSpatial"),
+    #            'point_query_time.pdf')
+    # draw_query(os.path.join(dir + "/range-contains_queries_100000"),
+    #            ("rtree", "rtree-parallel", "lbvh", "rtspatial"),
+    #            ("Boost", "Boost Parallel", "LBVH", "RTSpatial"),
+    #            'range_contains_query_time.pdf')
+
+    draw_query(os.path.join(dir + "/range-intersects_select_0.01_queries_100000"),
+               ("rtree-parallel", "lbvh", "rtspatial"),
+               ("Boost Parallel", "LBVH", "RTSpatial"),
+               'range_intersects_query_time.pdf')
     # draw_query(os.path.join(dir + "/range-contains_queries_100000"))
-    draw_query(os.path.join(dir + "/range-intersects_select_0.01_queries_100000"))
+    # draw_query(os.path.join(dir + "/range-intersects_select_0.01_queries_100000"))

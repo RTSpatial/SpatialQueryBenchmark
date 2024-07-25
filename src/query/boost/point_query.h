@@ -19,6 +19,13 @@ time_stat RunPointQueryBoost(const std::vector<box_t> &boxes,
   boost::geometry::index::rtree<box_t, boost::geometry::index::rstar<16>,
                                 boost::geometry::index::indexable<box_t>>
       rtree;
+#ifdef COLLECT_RESULTS
+  std::vector<box_t> results;
+#endif
+
+#ifdef COUNT_RESULTS
+  size_t counter;
+#endif
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     rtree.clear();
@@ -29,15 +36,35 @@ time_stat RunPointQueryBoost(const std::vector<box_t> &boxes,
   }
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
-    ts.num_results = 0;
+#ifdef COLLECT_RESULTS
+    results.clear();
+#endif
+
+#ifdef COUNT_RESULTS
+    counter = 0;
+#endif
     sw.start();
     for (auto &p : queries) {
+#ifdef COLLECT_RESULTS
+      rtree.query(boost::geometry::index::contains(p),
+                  std::back_inserter(results));
+#endif
+
+#ifdef COUNT_RESULTS
       rtree.query(boost::geometry::index::contains(p),
                   boost::make_function_output_iterator(
                       [&](const box_t &b) { ts.num_results++; }));
+#endif
     }
     sw.stop();
     ts.query_ms.push_back(sw.ms());
+#ifdef COLLECT_RESULTS
+    ts.num_results = results.size();
+#endif
+
+#ifdef COUNT_RESULTS
+    ts.num_results = counter;
+#endif
   }
 
   return ts;
@@ -56,6 +83,15 @@ time_stat RunParallelPointQueryBoost(const std::vector<box_t> &boxes,
                                 boost::geometry::index::indexable<box_t>>
       rtree;
 
+#ifdef COLLECT_RESULTS
+  std::vector<box_t> results;
+  std::mutex mu;
+#endif
+
+#ifdef COUNT_RESULTS
+  size_t counter;
+#endif
+
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     rtree.clear();
     sw.start();
@@ -72,28 +108,55 @@ time_stat RunParallelPointQueryBoost(const std::vector<box_t> &boxes,
 
     sw.start();
     ts.num_results = 0;
+#ifdef COLLECT_RESULTS
+    results.clear();
+#endif
     total_num_results = 0;
+
     for (int tid = 0; tid < config.parallelism; tid++) {
       threads.emplace_back(
           [&](int tid) {
             auto begin = std::min(tid * avg_queries, ts.num_queries);
             auto end = std::min(begin + avg_queries, ts.num_queries);
             size_t num_results = 0;
+            std::vector<box_t> local_results;
 
             for (auto i = begin; i < end; i++) {
               auto &p = queries[i];
+#ifdef COLLECT_RESULTS
+              rtree.query(boost::geometry::index::contains(p),
+                          std::back_inserter(local_results));
+#endif
+
+#ifdef COUNT_RESULTS
               rtree.query(boost::geometry::index::contains(p),
                           boost::make_function_output_iterator(
                               [&](const box_t &b) { num_results++; }));
+#endif
             }
+
+#ifdef COLLECT_RESULTS
+            std::unique_lock<std::mutex> lock(mu);
+            results.insert(results.end(), local_results.begin(),
+                           local_results.end());
+#endif
+
+#ifdef COUNT_RESULTS
             total_num_results += num_results;
+#endif
           },
           tid);
     }
     for (auto &thread : threads) {
       thread.join();
     }
+#ifdef COLLECT_RESULTS
+    ts.num_results = results.size();
+#endif
+
+#ifdef COUNT_RESULTS
     ts.num_results = total_num_results;
+#endif
     sw.stop();
     ts.query_ms.push_back(sw.ms());
   }

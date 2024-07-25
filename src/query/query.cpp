@@ -6,11 +6,14 @@
 #include "benchmark_configs.h"
 #include "boost/point_query.h"
 #include "boost/range_query.h"
-#include "flags.h"
-#include "query/glin/point_query.h"
+
 #include "query/glin/range_query.h"
+#include "query/lbvh/point_query.h"
+#include "query/lbvh/range_query.h"
 #include "query/rtspatial/point_query.h"
 #include "query/rtspatial/range_query.h"
+
+#include "flags.h"
 
 template <typename GEOM_T>
 void DumpBoxes(const std::string &output, const std::vector<GEOM_T> &geoms) {
@@ -62,9 +65,12 @@ int main(int argc, char *argv[]) {
       ts = RunPointQueryRTSpatial(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kGLIN:
-      ts = RunPointQueryGLIN(geoms, queries, conf);
+      //      ts = RunPointQueryGLIN(geoms, queries, conf);
+      std::cout << "Unsupported" << std::endl;
+      abort();
       break;
     case BenchmarkConfig::IndexType::kLBVH:
+      ts = RunPointQueryLBVH(geoms, queries, conf);
       break;
     }
     break;
@@ -91,6 +97,7 @@ int main(int argc, char *argv[]) {
       ts = RunRangeQueryGLIN(geoms, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kLBVH:
+      ts = RunRangeQueryLBVH(geoms, queries, conf);
       break;
     }
     break;

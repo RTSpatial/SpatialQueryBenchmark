@@ -66,7 +66,7 @@ if __name__ == '__main__':
     intersect_weight = 0.999
 
     for n_rays in parallelisms:
-        per_ray_search_cost = math.log10(queries / n_rays)
+        per_ray_search_cost = math.log10(queries )
 
         cast_rays_cost = geoms * per_ray_search_cost * n_rays
         intersect_cost = geoms * queries * hit_percent / n_rays

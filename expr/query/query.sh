@@ -29,8 +29,9 @@ function run_point_query_contains() {
       echo "${log}" | xargs dirname | xargs mkdir -p
 
       echo "Running query $query"
-      cmd="${BENCHMARK_ROOT}/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+      cmd="${BENCHMARK_ROOT}/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
         -query $query \
+        -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
         -index_type $index_type \
         -load_factor 0.001"
@@ -57,8 +58,9 @@ function run_range_query_contains() {
       echo "$log" | xargs dirname | xargs mkdir -p
 
       echo "Running query $query"
-      cmd="$BENCHMARK_ROOT/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+      cmd="$BENCHMARK_ROOT/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
         -query $query \
+        -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
         -index_type $index_type \
         -load_factor 0.001"
@@ -86,12 +88,11 @@ function run_range_query_intersects() {
         echo "$log" | xargs dirname | xargs mkdir -p
 
         echo "Running query $query"
-        cmd="${BENCHMARK_ROOT}/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+        cmd="${BENCHMARK_ROOT}/query_counting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
           -query $query \
           -serialize $SERIALIZE_ROOT \
           -query_type ${query_type} \
-          -index_type $index_type \
-          -parallelism 10" # park_europe, rays=50
+          -index_type $index_type" # park_europe, rays=50
 
         echo "$cmd" >"${log}.tmp"
         eval "$cmd" 2>&1 | tee -a "${log}.tmp"
@@ -104,7 +105,7 @@ function run_range_query_intersects() {
   done
 }
 
-for index_type in "rtree" "rtree-parallel" "rtspatial"; do
+for index_type in "rtree" "rtree-parallel" "lbvh" "rtspatial"; do
   run_point_query_contains "$index_type"
   run_range_query_contains "$index_type"
   run_range_query_intersects "$index_type"

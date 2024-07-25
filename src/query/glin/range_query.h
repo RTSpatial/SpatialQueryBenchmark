@@ -74,10 +74,6 @@ time_stat RunRangeQueryGLIN(const std::vector<box_t> &boxes,
       default:
         abort();
       }
-
-      std::sort(find_result.begin(), find_result.end());
-      auto end = std::unique(find_result.begin(), find_result.end());
-      find_result.resize(end - find_result.begin());
       ts.num_results += find_result.size();
     }
     sw.stop();
