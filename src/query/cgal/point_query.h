@@ -36,14 +36,8 @@ time_stat RunPointQueryCGAL(const std::vector<box_t> &boxes,
     cgal_points.emplace_back(p.x(), p.y());
   }
 
-#ifdef COLLECT_RESULTS
   std::vector<Point> results;
   std::mutex mu;
-#endif
-
-#ifdef COUNT_RESULTS
-  size_t counter;
-#endif
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     tree.clear();
@@ -55,16 +49,12 @@ time_stat RunPointQueryCGAL(const std::vector<box_t> &boxes,
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     std::vector<std::thread> threads;
-    std::atomic_uint64_t total_num_results;
     size_t avg_queries =
         (boxes.size() + config.parallelism - 1) / config.parallelism;
 
     sw.start();
     ts.num_results = 0;
-#ifdef COLLECT_RESULTS
     results.clear();
-#endif
-    total_num_results = 0;
 
     for (int tid = 0; tid < config.parallelism; tid++) {
       threads.emplace_back(
@@ -81,37 +71,19 @@ time_stat RunPointQueryCGAL(const std::vector<box_t> &boxes,
               Point upper_right(p.max_corner().x(), p.max_corner().y());
               Fuzzy_iso_box range(lower_left, upper_right);
 
-#ifdef COLLECT_RESULTS
               tree.search(std::back_inserter(local_results), range);
-#endif
-
-#ifdef COUNT_RESULTS
-              num_results++;
-#endif
             }
 
-#ifdef COLLECT_RESULTS
             std::unique_lock<std::mutex> lock(mu);
             results.insert(results.end(), local_results.begin(),
                            local_results.end());
-#endif
-
-#ifdef COUNT_RESULTS
-            total_num_results += num_results;
-#endif
           },
           tid);
     }
     for (auto &thread : threads) {
       thread.join();
     }
-#ifdef COLLECT_RESULTS
     ts.num_results = results.size();
-#endif
-
-#ifdef COUNT_RESULTS
-    ts.num_results = total_num_results;
-#endif
     sw.stop();
     ts.query_ms.push_back(sw.ms());
   }

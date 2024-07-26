@@ -32,7 +32,7 @@ function run_point_query_contains() {
       if [[ $index_type == "cuspatial" ]]; then
         cmd="python3 ${script_dir}/cuspatial_point_contains.py ${DATASET_ROOT}/polygons/${wkt_file} $query"
       else
-        cmd="$BENCHMARK_ROOT/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+        cmd="$BENCHMARK_ROOT/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
         -query $query \
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
@@ -67,7 +67,7 @@ function run_point_query_contains_vary_size() {
       if [[ $index_type == "cuspatial" ]]; then
         cmd="python3 ${script_dir}/cuspatial_point_contains.py ${DATASET_ROOT}/polygons/${wkt_file} $query"
       else
-        cmd="$BENCHMARK_ROOT/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+        cmd="$BENCHMARK_ROOT/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
         -query $query \
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
@@ -97,7 +97,7 @@ function run_range_query_contains() {
       echo "$log" | xargs dirname | xargs mkdir -p
 
       echo "Running query $query"
-      cmd="$BENCHMARK_ROOT/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+      cmd="$BENCHMARK_ROOT/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
         -query $query \
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
@@ -127,7 +127,7 @@ function run_range_query_contains_vary_size() {
       echo "${log}" | xargs dirname | xargs mkdir -p
 
       echo "Running query $query"
-      cmd="$BENCHMARK_ROOT/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+      cmd="$BENCHMARK_ROOT/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
         -query $query \
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
@@ -158,7 +158,7 @@ function run_range_query_intersects() {
         echo "$log" | xargs dirname | xargs mkdir -p
 
         echo "Running query $query"
-        cmd="${BENCHMARK_ROOT}/query_collecting -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+        cmd="${BENCHMARK_ROOT}/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
           -query $query \
           -serialize $SERIALIZE_ROOT \
           -query_type ${query_type} \

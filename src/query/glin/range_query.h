@@ -33,7 +33,7 @@ time_stat RunRangeQueryGLIN(const std::vector<box_t> &boxes,
       new geos::geom::PrecisionModel());
   geos::geom::GeometryFactory::Ptr global_factory =
       geos::geom::GeometryFactory::create(pm.get(), -1);
-  double piece_limitation = 10000; // a good value suggested in their paper
+  double piece_limitation = 1000; // a good value suggested in their paper
 
   // GLIN's definition of "Contains" is different from the other libraries
   // So we need to swap queries and boxes
@@ -61,23 +61,17 @@ time_stat RunRangeQueryGLIN(const std::vector<box_t> &boxes,
     ts.insert_ms.push_back(sw.ms());
   }
 
-#ifdef COLLECT_RESULTS
   std::vector<geos::geom::Geometry *> results;
   std::mutex mu;
-#endif
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     size_t avg_queries =
         (p_queries->size() + config.parallelism - 1) / config.parallelism;
     std::vector<std::thread> threads;
-    std::atomic_uint64_t total_num_results;
 
     sw.start();
     ts.num_results = 0;
-    total_num_results = 0;
-#ifdef COLLECT_RESULTS
     results.clear();
-#endif
     for (int tid = 0; tid < config.parallelism; tid++) {
       threads.emplace_back(
           [&](int tid) {
@@ -89,48 +83,32 @@ time_stat RunRangeQueryGLIN(const std::vector<box_t> &boxes,
               auto &q = (*p_queries)[i];
               geos::geom::Envelope env(q.min_corner().x(), q.max_corner().x(),
                                        q.min_corner().y(), q.max_corner().y());
-              auto bbox = global_factory->toGeometry(&env)->clone();
               int count_filter = 0;
-              std::vector<geos::geom::Geometry *> find_result;
 
               switch (config.query_type) {
               case BenchmarkConfig::QueryType::kRangeContains:
               case BenchmarkConfig::QueryType::kRangeIntersects:
-                index.glin_find(bbox.get(), "z", cell_xmin, cell_ymin,
-                                cell_x_intvl, cell_y_intvl, pieces, find_result,
+                index.glin_find(global_factory->toGeometry(&env).get(), "z",
+                                cell_xmin, cell_ymin, cell_x_intvl,
+                                cell_y_intvl, pieces, local_results,
                                 count_filter);
                 break;
               default:
                 abort();
               }
-#ifdef COLLECT_RESULTS
-              local_results.insert(local_results.end(), find_result.begin(),
-                                   find_result.end());
-#endif
 
-#ifdef COUNT_RESULTS
-              total_num_results += find_result.size();
-#endif
             }
 
-#ifdef COLLECT_RESULTS
             std::unique_lock<std::mutex> lock(mu);
             results.insert(results.end(), local_results.begin(),
                            local_results.end());
-#endif
           },
           tid);
     }
     for (auto &thread : threads) {
       thread.join();
     }
-#ifdef COLLECT_RESULTS
     ts.num_results = results.size();
-#endif
-
-#ifdef COUNT_RESULTS
-    ts.num_results = total_num_results;
-#endif
     sw.stop();
     ts.query_ms.push_back(sw.ms());
   }

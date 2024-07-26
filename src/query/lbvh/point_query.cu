@@ -49,27 +49,13 @@ time_stat RunPointQueryLBVH(const std::vector<box_t> &boxes,
 
   auto p_lbvh = lbvh.get_device_repr();
 
-#ifdef COLLECT_RESULTS
   rtspatial::Queue<thrust::pair<uint32_t, uint32_t>> results;
   results.Init(std::max(
       1ul, (size_t)(boxes.size() * queries.size() * config.load_factor)));
   auto d_results = results.DeviceObject();
-#endif
-
-#ifdef COUNT_RESULTS
-  rtspatial::SharedValue<unsigned long long int> counter;
-  auto *p_counter = counter.data();
-#endif
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
-#ifdef COLLECT_RESULTS
     results.Clear();
-#endif
-
-#ifdef COUNT_RESULTS
-    counter.set(0);
-#endif
-
     sw.start();
     switch (config.query_type) {
     case BenchmarkConfig::QueryType::kPointContains: {
@@ -91,13 +77,7 @@ time_stat RunPointQueryLBVH(const std::vector<box_t> &boxes,
             lbvh::query_device_all(
                 p_lbvh, lbvh::overlaps(box),
                 [=] __device__(std::uint32_t geom_id) mutable {
-#ifdef COLLECT_RESULTS
                   d_results.Append(thrust::make_pair(geom_id, query_id));
-#endif
-
-#ifdef COUNT_RESULTS
-                  atomicAdd(p_counter, 1);
-#endif
                 });
           });
 
@@ -107,13 +87,7 @@ time_stat RunPointQueryLBVH(const std::vector<box_t> &boxes,
       abort();
     }
     // Implicit barrier
-#ifdef COLLECT_RESULTS
     ts.num_results = results.size();
-#endif
-
-#ifdef COUNT_RESULTS
-    ts.num_results = counter.get();
-#endif
     sw.stop();
     ts.query_ms.push_back(sw.ms());
   }

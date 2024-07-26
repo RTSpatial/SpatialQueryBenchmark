@@ -184,7 +184,7 @@ def draw_range_query_intersects(prefix,
     #  "/range-intersects_select_0.0001_queries_100000"
     for idx, selectivity in enumerate(selectivities):
         ax = axes[idx]
-        folder_name = "range-intersects_select_{selectivity}_queries_100000".format(selectivity=selectivity)
+        folder_name = "range-intersects_select_{selectivity}_queries_10000".format(selectivity=selectivity)
 
         index_loading_time = {}
         index_query_time = {}
@@ -199,6 +199,7 @@ def draw_range_query_intersects(prefix,
 
         # 2. Segmenting the whole range (from 0 to 1) of the color map into multiple segments
         slicedCM = cmap(np.linspace(0, 1, len(index_types)))
+        slicedCM = slicedCM[::-1]
 
         index_query_time.columns = index_labels
         bars = index_query_time.plot(kind="bar", width=0.5, ax=ax, color=slicedCM, edgecolor='black', )
@@ -207,6 +208,7 @@ def draw_range_query_intersects(prefix,
         for i in range(len(index_types)):
             all_hatches += [hatches[i] for _ in range(len(index_query_time))]
 
+        all_hatches.reverse()
         for idx, patch in enumerate(bars.patches):
             patch.set_hatch(all_hatches[idx])
 

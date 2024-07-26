@@ -39,10 +39,7 @@ if (USE_GPU)
     message("CUDAToolkit_INCLUDE_DIRS: ${CUDAToolkit_INCLUDE_DIRS}")
 
     RTSPATIAL_COMPILE_SHADERS("${RTSPATIAL_INCLUDE_DIR}/rtspatial/default_handlers" "collecting_handlers.h"
-            "${PROJECT_BINARY_DIR}/collecting_ptx" PROGRAM_MODULES_COLLECTING)
-
-    RTSPATIAL_COMPILE_SHADERS("${RTSPATIAL_INCLUDE_DIR}/rtspatial/default_handlers" "counting_handlers.h"
-            "${PROJECT_BINARY_DIR}/counting_ptx" PROGRAM_MODULES_COUNTING)
+            "${PROJECT_BINARY_DIR}/ptx" PROGRAM_MODULES_COLLECTING)
     # LBVH
     include_directories(thirdparty/lbvh)
     include_directories(${RTSPATIAL_INCLUDE_DIR})
@@ -77,26 +74,14 @@ list(APPEND GPU_SOURCES src/query/rtspatial/range_query.cu
         src/query/lbvh/range_query.cu
         src/query/lbvh/point_query.cu)
 
-add_executable(query_collecting src/query/query.cpp
+add_executable(query src/query/query.cpp
         ${GPU_SOURCES}
         src/flags.cpp
         ${PROGRAM_MODULES_COLLECTING})
-target_compile_definitions(query_collecting PRIVATE PIECE) # GLIN requires for intersects query
-target_link_libraries(query_collecting pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} ${Boost_LIBRARIES})
-target_compile_definitions(query_collecting PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/collecting_ptx\" -DCOLLECT_RESULTS)
+target_compile_definitions(query PRIVATE PIECE) # GLIN requires for intersects query
+target_link_libraries(query pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} ${Boost_LIBRARIES})
+target_compile_definitions(query PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/ptx\" -DCOLLECT_RESULTS)
 if (USE_GPU)
-    target_compile_options(query_collecting PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
-    set_target_properties(query_collecting PROPERTIES CUDA_ARCHITECTURES "${ENABLED_ARCHS}")
-endif ()
-
-add_executable(query_counting src/query/query.cpp
-        ${GPU_SOURCES}
-        src/flags.cpp
-        ${PROGRAM_MODULES_COUNTING})
-target_compile_definitions(query_counting PRIVATE PIECE) # GLIN requires for intersects query
-target_link_libraries(query_counting pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} ${Boost_LIBRARIES})
-target_compile_definitions(query_counting PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/counting_ptx\" -DCOUNT_RESULTS)
-if (USE_GPU)
-    target_compile_options(query_counting PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
-    set_target_properties(query_counting PROPERTIES CUDA_ARCHITECTURES "${ENABLED_ARCHS}")
+    target_compile_options(query PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
+    set_target_properties(query PROPERTIES CUDA_ARCHITECTURES "${ENABLED_ARCHS}")
 endif ()
