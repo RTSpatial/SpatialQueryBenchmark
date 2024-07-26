@@ -3,10 +3,15 @@ from matplotlib.scale import LogScale
 import os
 import numpy as np
 # import comm_settings
-from common import datasets, dataset_labels, hatches
+from common import datasets, dataset_labels, hatches, markers, linestyles
 import sys
 import re
 import pandas as pd
+
+
+def scale_size(size_list, k_scale=1000):
+    return tuple(str(int(kb)) + "K" if kb < k_scale else str(int(kb / k_scale)) + "M" for kb in
+                 np.asarray(size_list) / k_scale)
 
 
 def get_running_time(prefix, datasets):
@@ -96,6 +101,7 @@ def draw_query(prefix, index_types,
 
     # 2. Segmenting the whole range (from 0 to 1) of the color map into multiple segments
     slicedCM = cmap(np.linspace(0, 1, len(index_types)))
+    slicedCM = slicedCM[::-1]
 
     index_query_time.columns = index_labels
     bars = index_query_time.plot(kind="bar", width=0.7, ax=ax, color=slicedCM, edgecolor='black', )
@@ -104,6 +110,7 @@ def draw_query(prefix, index_types,
     for i in range(len(index_types)):
         all_hatches += [hatches[i] for _ in range(len(index_query_time))]
 
+    all_hatches.reverse()
     for idx, patch in enumerate(bars.patches):
         patch.set_hatch(all_hatches[idx])
 
@@ -112,6 +119,7 @@ def draw_query(prefix, index_types,
     ax.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax.set_yscale('log')
     ax.margins(x=0.05, y=0.35)
+
     ax.legend(loc='upper left', ncol=2, handletextpad=0.3,
               fontsize=11, borderaxespad=0.2, frameon=False)
     fig.tight_layout()
@@ -144,15 +152,72 @@ def draw_vary_query_size(prefix,
     slicedCM = cmap(np.linspace(0, 1, len(index_types)))
 
     index_query_time.columns = index_labels
-    index_query_time.plot(kind="line", ax=ax, )
+    index_query_time.plot(kind="line", ax=ax)
+    markers = ['*', "o", '^', 's', '', 'x']
+    for i, line in enumerate(ax.get_lines()):
+        line.set_marker(markers[i])
+        # line.set_linestyle( linestyles[])
+        line.set_color('black')
 
-    ax.set_xticks(loc, query_sizes, rotation=0)
+    ax.set_xticks(loc, scale_size(query_sizes), rotation=0)
     ax.set_xlabel("Query Size")
     ax.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax.set_yscale('log')
-    ax.margins(x=0.05, y=0.35)
-    ax.legend(loc='upper left', ncol=2, handletextpad=0.3,
+    ax.margins(x=0.05, y=0.38)
+    ax.legend(loc='upper left', ncol=3, handletextpad=0.3,
               fontsize=11, borderaxespad=0.2, frameon=False)
+    fig.tight_layout()
+
+    fig.savefig(output, format='pdf', bbox_inches='tight')
+    plt.show()
+
+
+def draw_range_query_intersects(prefix,
+                                index_types,
+                                index_labels,
+                                output):
+    loc = [x for x in range(len(dataset_labels))]
+    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 3.))
+
+    selectivities = ("0.0001", "0.001", "0.01")
+
+    #  "/range-intersects_select_0.0001_queries_100000"
+    for idx, selectivity in enumerate(selectivities):
+        ax = axes[idx]
+        folder_name = "range-intersects_select_{selectivity}_queries_100000".format(selectivity=selectivity)
+
+        index_loading_time = {}
+        index_query_time = {}
+        for index_type in index_types:
+            loading_time, query_time = get_running_time(os.path.join(prefix, folder_name, index_type), datasets)
+            index_loading_time[index_type] = loading_time
+            index_query_time[index_type] = query_time
+        index_query_time = pd.DataFrame.from_dict(index_query_time, )
+
+        # 1. Choose your desired colormap
+        cmap = plt.get_cmap('gist_gray')
+
+        # 2. Segmenting the whole range (from 0 to 1) of the color map into multiple segments
+        slicedCM = cmap(np.linspace(0, 1, len(index_types)))
+
+        index_query_time.columns = index_labels
+        bars = index_query_time.plot(kind="bar", width=0.5, ax=ax, color=slicedCM, edgecolor='black', )
+
+        all_hatches = []
+        for i in range(len(index_types)):
+            all_hatches += [hatches[i] for _ in range(len(index_query_time))]
+
+        for idx, patch in enumerate(bars.patches):
+            patch.set_hatch(all_hatches[idx])
+
+        ax.set_xticks(loc, dataset_labels, rotation=0)
+        ax.set_xlabel(str(float(selectivity) * 100) + "% Selectivity")
+        ax.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
+        ax.set_yscale('log')
+        ax.margins(x=0.05, y=0.35)
+
+        ax.legend(loc='upper left', ncol=2, handletextpad=0.3,
+                  fontsize=11, borderaxespad=0.2, frameon=False)
     fig.tight_layout()
 
     fig.savefig(output, format='pdf', bbox_inches='tight')
@@ -162,18 +227,27 @@ def draw_vary_query_size(prefix,
 if __name__ == '__main__':
     dir = os.path.dirname(sys.argv[0]) + "/../query/logs"
 
-    # draw_build_time(os.path.join(dir + "/point-contains_point-contains_queries_100000"))
-    draw_query(os.path.join(dir + "/point-contains_point-contains_queries_100000"),
-               ("rtree", "cgal", "cuspatial", "lbvh", "rtspatial"),
-               ("Boost", "CGAL", "cuSpatial", "LBVH", "RTSpatial"),
-               'point_query_time.pdf')
+    # draw_query(os.path.join(dir + "/point-contains_point-contains_queries_100000"),
+    #            ("rtree", "cgal", "cuspatial", "lbvh", "rtspatial"),
+    #            ("Boost", "CGAL", "cuSpatial", "LBVH", "RTSpatial"),
+    #            'point_query_time.pdf')
 
     # draw_vary_query_size(os.path.join(dir + "/point-contains_point-contains_queries_"),
     #                      "parks_Europe.wkt.log",
-    #                      ("lbvh", "cuspatial", "rtspatial"),
-    #                      ("LBVH", "cuSpatial", "RTSpatial"),
-    #                      ("200000", "400000", "600000", "800000", "1000000"),
+    #                      ("rtree", "cgal", "cuspatial", "lbvh", "rtspatial"),
+    #                      ("Boost", "CGAL", "cuSpatial", "LBVH", "RTSpatial"),
+    #                      (50000, 100000, 200000, 400000, 800000,),
     #                      'point_query_time_vary_size.pdf')
+
+    # draw_query(os.path.join(dir + "/range-contains_queries_100000"),
+    #            ("rtree", "glin","lbvh", "rtspatial"),
+    #            ("Boost", "GLIN", "LBVH", "RTSpatial"),
+    #            'range_query_contains_time.pdf')
+
+    draw_range_query_intersects(os.path.join(dir),
+                                ("rtree", "glin", "lbvh", "rtspatial"),
+                                ("Boost", "GLIN", "LBVH", "RTSpatial"),
+                                'range_query_intersects_time.pdf')
 
     # draw_query(os.path.join(dir + "/range-contains_queries_100000"),
     #            ("rtree", "rtree-parallel", "lbvh", "rtspatial"),
