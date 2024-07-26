@@ -8,6 +8,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 
+# SIMD
+if (MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /arch:AVX2 /W1 /EHsc")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
+else ()
+    # clang and gcc
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra")
+endif ()
+
+
 include("cmake/FindGFlags.cmake")
 if (NOT GFLAGS_FOUND)
     message(STATUS "gflags not found, build without gflags")
@@ -44,17 +55,6 @@ add_subdirectory(thirdparty/GLIN)
 include_directories(thirdparty/GLIN)
 include_directories(thirdparty/GLIN/src/core)
 include_directories(${GEOS_INCLUDE_DIR})
-
-
-# SIMD
-if (MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /arch:AVX2 /W1 /EHsc")
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -xHost")
-else ()
-    # clang and gcc
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra")
-endif ()
 
 
 find_package(Boost 1.76 REQUIRED COMPONENTS system filesystem serialization)
