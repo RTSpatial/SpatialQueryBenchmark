@@ -14,12 +14,6 @@ if (NOT GFLAGS_FOUND)
 else ()
     include_directories(SYSTEM ${GFLAGS_INCLUDE_DIRS})
 endif ()
-find_package(Boost 1.76 REQUIRED COMPONENTS serialization)
-message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
-message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
-message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
-
-link_directories(${Boost_LIBRARY_DIRS})
 
 find_package(CGAL REQUIRED)
 
@@ -62,8 +56,14 @@ else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra")
 endif ()
 
-include_directories(${Boost_INCLUDE_DIRS})
 
+find_package(Boost 1.76 REQUIRED COMPONENTS system filesystem serialization)
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
+
+message("Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
+message("Boost_LIBRARIES: ${Boost_LIBRARIES}")
+message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 
 include_directories(src)
 add_executable(gen src/gen/gen.cpp src/flags.cpp)

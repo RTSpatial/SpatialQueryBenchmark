@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-export DATASET_ROOT="/local/storage/liang/rtspatial/datasets"
-export SERIALIZE_ROOT="/local/storage/liang/rtspatial/ser"
+export DATASET_ROOT="/home/geng.161/rtspatial/datasets"
+export SERIALIZE_ROOT="/home/geng.161/rtspatial/ser"
 export QUERY_ROOT="${DATASET_ROOT}/queries"
-export BENCHMARK_ROOT="/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190"
+export BENCHMARK_ROOT="/home/geng.161/SpatialQueryBenchmark/build"
 export DATASET_WKT_FILES=("dtl_cnty.wkt"
   "USACensusBlockGroupBoundaries.wkt"
   "USADetailedWaterBodies.wkt"

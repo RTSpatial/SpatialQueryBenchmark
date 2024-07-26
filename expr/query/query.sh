@@ -129,13 +129,12 @@ function run_range_query_intersects() {
   done
 }
 
-run_point_query_contains_cuspatial
 
-for index_type in "rtree" "lbvh" "cgal" "rtspatial"; do
+for index_type in "rtree" "cgal"; do
   run_point_query_contains "$index_type"
 done
 
-for index_type in "rtree" "lbvh" "rtspatial"; do
+for index_type in "rtree" "glin"; do
   run_range_query_contains "$index_type"
   run_range_query_intersects "$index_type"
 done
