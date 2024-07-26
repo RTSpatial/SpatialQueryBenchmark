@@ -80,7 +80,7 @@ add_executable(query src/query/query.cpp
         ${PROGRAM_MODULES_COLLECTING})
 target_compile_definitions(query PRIVATE PIECE) # GLIN requires for intersects query
 target_link_libraries(query pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} ${Boost_LIBRARIES})
-target_compile_definitions(query PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/ptx\" -DCOLLECT_RESULTS)
+target_compile_definitions(query PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/ptx\")
 if (USE_GPU)
     target_compile_options(query PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
     set_target_properties(query PROPERTIES CUDA_ARCHITECTURES "${ENABLED_ARCHS}")
