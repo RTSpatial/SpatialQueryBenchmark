@@ -14,7 +14,8 @@ time_stat RunRangeQueryBoost(const std::vector<box_t> &boxes,
   ts.num_geoms = boxes.size();
   ts.num_queries = queries.size();
 
-  boost::geometry::index::rtree<box_t, boost::geometry::index::rstar<16>,
+  boost::geometry::index::rtree<box_t,
+                                boost::geometry::index::linear<BOOST_LEAF_SIZE>,
                                 boost::geometry::index::indexable<box_t>>
       rtree;
 #ifdef COLLECT_RESULTS

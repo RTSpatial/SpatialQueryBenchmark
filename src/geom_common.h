@@ -5,5 +5,6 @@ using coord_t = float;
 using point_t = boost::geometry::model::d2::point_xy<coord_t>;
 using box_t = boost::geometry::model::box<point_t>;
 using polygon_t = boost::geometry::model::polygon<point_t>;
+#define BOOST_LEAF_SIZE (200) // suggested by paper
 
 #endif // SPATIALQUERYBENCHMARK_GEOM_COMMON_H

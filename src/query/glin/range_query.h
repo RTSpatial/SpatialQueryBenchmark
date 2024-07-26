@@ -135,6 +135,8 @@ time_stat RunRangeQueryGLIN(const std::vector<box_t> &boxes,
     ts.query_ms.push_back(sw.ms());
   }
 
+  index.clear(); // GLIN crashes sometimes when destructing, so clear it
+
   return ts;
 }
 #endif // SPATIALQUERYBENCHMARK_GLIN_RANGE_QUERY_H
