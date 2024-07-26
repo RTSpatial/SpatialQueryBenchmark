@@ -30,7 +30,7 @@ rmm.mr.set_current_device_resource(
 
 
 def preprocess_polys(recreate=False):
-    file_path = "polys.arrow"
+    file_path = geom_path + ".polys.arrow"
     # Create parquet file if it doesn't exist yet
     if recreate or not os.path.exists(file_path):
         # Preprocess and save polys.arrow
@@ -61,7 +61,7 @@ def preprocess_polys(recreate=False):
 
 
 def preprocess_points(recreate=False):
-    file_path = "points.arrow"
+    file_path = query_path + ".points.arrow"
     # Create parquet file if it doesn't exist yet
     if recreate or not os.path.exists(file_path):
         # Preprocess and save points.arrow
@@ -116,8 +116,8 @@ def run_benchmark(polys, points, min_x, min_y, max_x, max_y, dtype):
     def trunc(n, m):
         return int(n * m) / m
 
-    def ftime(start):
-        return f"{trunc((time.time() - start) * 1000, 1000)} ms"
+    def ftime(start, n_repeat):
+        return f"{trunc((time.time() - start) * 1000 / n_repeat, 1000)} ms"
 
     threshold = 15
 
@@ -130,19 +130,24 @@ def run_benchmark(polys, points, min_x, min_y, max_x, max_y, dtype):
     scale = max(max_x - min_x, max_y - min_y) / (1 << max_depth)
 
     # print("  params:", {"max_depth": max_depth, "max_size": max_size, "scale": scale})
+    n_repeat = 5
 
     build_start = time.time()
-    point_indices, quadtree = cuspatial.quadtree_on_points(points, min_x, max_x, min_y, max_y, scale, max_depth,
-                                                           max_size)
-    print(f"Loading Time {ftime(build_start)}")
+    for _ in range(n_repeat):
+        point_indices, quadtree = cuspatial.quadtree_on_points(points, min_x, max_x, min_y, max_y, scale, max_depth,
+                                                               max_size)
+    print(f"Loading Time {ftime(build_start, n_repeat)}")
 
     query_start = time.time()
-    poly_bboxes = cuspatial.polygon_bounding_boxes(polys)
-    poly_quad_pairs = cuspatial.join_quadtree_and_bounding_boxes(quadtree, poly_bboxes, min_x, max_x, min_y, max_y,
-                                                                 scale, max_depth)
-    polygons_and_points = cuspatial.quadtree_point_in_polygon(poly_quad_pairs, quadtree, point_indices, points, polys)
-    print(f"Query Time {ftime(query_start)}")
+    for _ in range(n_repeat):
+        poly_bboxes = cuspatial.polygon_bounding_boxes(polys)
+        poly_quad_pairs = cuspatial.join_quadtree_and_bounding_boxes(quadtree, poly_bboxes, min_x, max_x, min_y, max_y,
+                                                                     scale, max_depth)
+        polygons_and_points = cuspatial.quadtree_point_in_polygon(poly_quad_pairs, quadtree, point_indices, points,
+                                                                  polys)
+    print(f"Query Time {ftime(query_start, n_repeat)}")
     print(f"Results {len(polygons_and_points)}")
+
 
 if __name__ == '__main__':
     import warnings
@@ -150,4 +155,4 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     geom_path = sys.argv[1]
     query_path = sys.argv[2]
-    run_benchmark(*read_polys_and_points("float32", True))
+    run_benchmark(*read_polys_and_points("float32", False))

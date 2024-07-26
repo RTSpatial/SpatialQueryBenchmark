@@ -57,7 +57,7 @@ include_directories(thirdparty/GLIN/src/core)
 include_directories(${GEOS_INCLUDE_DIR})
 
 
-find_package(Boost 1.76 REQUIRED COMPONENTS system filesystem serialization)
+find_package(Boost 1.76 REQUIRED COMPONENTS serialization)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 

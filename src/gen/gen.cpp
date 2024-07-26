@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     abort();
   }
 
-  auto geoms = LoadBoxes(FLAGS_input, limit);
+  auto geoms = LoadBoxes(FLAGS_input, FLAGS_serialize, limit);
   std::cout << "Loaded geometries " << geoms.size() << std::endl;
 
   if (query_type == "point-contains") {

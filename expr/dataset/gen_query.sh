@@ -32,6 +32,25 @@ function gen_point_query_contains() {
   done
 }
 
+function gen_point_query_contains_vary_size() {
+  query_type="point-contains"
+  wkt_file="parks_Europe.wkt"
+  for query_size in "${POINT_QUERY_VARY_SIZES[@]}"; do
+    output_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
+    output="${output_dir}/${wkt_file}"
+
+    if [[ ! -f "$output" ]]; then
+      mkdir -p "$output_dir"
+      echo "Generating $output, size $query_size"
+      "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
+        -serialize $SERIALIZE_ROOT \
+        -output "$output" \
+        -num_queries $query_size \
+        -query_type "$query_type"
+    fi
+  done
+}
+
 function gen_range_query_contains() {
   query_type="range-contains"
   for wkt_file in "${DATASET_WKT_FILES[@]}"; do
@@ -42,6 +61,7 @@ function gen_range_query_contains() {
       mkdir -p "$output_dir"
       echo "Generating $output"
       "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
+        -serialize $SERIALIZE_ROOT \
         -output "$output" \
         -num_queries $QUERY_SIZE \
         -query_type "$query_type"
@@ -49,25 +69,24 @@ function gen_range_query_contains() {
   done
 }
 
-#function gen_range_query_intersects() {
-#  query_type="range-intersects"
-#  for wkt_file in "${DATASET_WKT_FILES[@]}"; do
-#    for qualified_size in "${RANGE_QUERY_INTERSECTS_QUALIFIED_SIZES[@]}"; do
-#      output_dir="${QUERY_ROOT}/${query_type}_qualified_${qualified_size}_queries_${QUERY_SIZE}"
-#      output="${output_dir}/${wkt_file}"
-#
-#      if [[ ! -f "$output" ]]; then
-#        mkdir -p "$output_dir"
-#        echo "Generating $output"
-#        "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
-#          -output "$output" \
-#          -min_qualified $qualified_size \
-#          -num_queries $QUERY_SIZE \
-#          -query_type "$query_type"
-#      fi
-#    done
-#  done
-#}
+function gen_range_query_contains_vary_size() {
+  query_type="range-contains"
+  wkt_file="parks_Europe.wkt"
+  for query_size in 200000 400000 600000 800000 1000000; do
+    output_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
+    output="${output_dir}/${wkt_file}"
+
+    if [[ ! -f "$output" ]]; then
+      mkdir -p "$output_dir"
+      echo "Generating $output"
+      "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
+        -serialize $SERIALIZE_ROOT \
+        -output "$output" \
+        -num_queries $query_size \
+        -query_type "$query_type"
+    fi
+  done
+}
 
 function gen_range_query_intersects() {
   query_type="range-intersects"
@@ -80,6 +99,7 @@ function gen_range_query_intersects() {
         mkdir -p "$output_dir"
         echo "Generating $output"
         "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
+          -serialize $SERIALIZE_ROOT \
           -output "$output" \
           -selectivity $selectivity \
           -num_queries $QUERY_SIZE \
@@ -90,5 +110,9 @@ function gen_range_query_intersects() {
 }
 
 gen_point_query_contains
-gen_range_query_contains
-gen_range_query_intersects
+gen_point_query_contains_vary_size
+
+#gen_range_query_contains
+#gen_range_query_contains_vary_size
+#
+#gen_range_query_intersects
