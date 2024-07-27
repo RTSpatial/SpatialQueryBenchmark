@@ -61,9 +61,6 @@ int main(int argc, char *argv[]) {
     }
     auto queries =
         GenerateIntersectsQueries(geoms, min_qualified, num_queries, seed);
-
-    //    auto queries = GenerateUniformQueries(geoms, 0.001, num_queries,
-    //    seed);
     DumpBoxes(output, queries);
   } else {
     std::cerr << "Not supported query type: " << FLAGS_query_type << std::endl;

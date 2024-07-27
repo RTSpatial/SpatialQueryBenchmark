@@ -71,6 +71,7 @@ add_library(glin thirdparty/GLIN/glin/hilbert/hilbert.cpp)
 set(GPU_SOURCES "")
 list(APPEND GPU_SOURCES src/query/rtspatial/range_query.cu
         src/query/rtspatial/point_query.cu
+        src/query/rtspatial/update.cu
         src/query/lbvh/range_query.cu
         src/query/lbvh/point_query.cu)
 

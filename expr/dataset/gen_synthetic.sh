@@ -17,9 +17,10 @@ source "${script_dir}/../common.sh"
 FAIL=0
 
 for dist in uniform gaussian; do
-  for n in 1000000 2000000 3000000 4000000 5000000; do
+  for n in 10000000 20000000 30000000 40000000 50000000; do
     # generate polys about the center of USA
-    out_wkt="${DATASET_ROOT}/synthetic/${dist}_n_${n}.wkt"
+    dataset_name="${dist}_n_${n}.wkt"
+    out_wkt="${DATASET_ROOT}/synthetic/$dataset_name"
     if [[ ! -f "$out_wkt" ]]; then
       ./generator.py distribution=$dist \
         cardinality=$n \
@@ -31,20 +32,48 @@ for dist in uniform gaussian; do
         format=wkt \
         affinematrix=1,0,0,0,1,0 \
         maxsize=0.01,0.01 \
-        affinematrix=1,0,0,0,1,0 >"$out_wkt"
+        affinematrix=1,0,0,0,1,0 >"$out_wkt" &
     fi
   done
 done
 
 for job in $(jobs -p); do
-  echo $job
+  echo "Job finished, PID $job"
   wait $job || let "FAIL+=1"
 done
 
-echo $FAIL
+if [[ "$FAIL" -ne 0 ]]; then
+  echo "FAIL! ($FAIL)"
+fi
 
-if [ "$FAIL" == "0" ]; then
-  echo "YAY!"
-else
+for dist in uniform gaussian; do
+  for n in 10000000 20000000 30000000 40000000 50000000; do
+    dataset_name="${dist}_n_${n}.wkt"
+    in_wkt="${DATASET_ROOT}/synthetic/$dataset_name"
+
+    for query_type in "point-contains" "range-contains" "range-intersects"; do
+      output_dir="${QUERY_ROOT}/${query_type}_select_${SYNTHETIC_QUERY_SELECTIVITY}_queries_${SYNTHETIC_QUERY_SIZE}"
+      output="${output_dir}/${dataset_name}"
+
+      if [[ ! -f "$output" ]]; then
+        mkdir -p "$output_dir"
+        echo "Generating $output"
+        "$BENCHMARK_ROOT"/gen -input "$in_wkt" \
+          -output "$output" \
+          -serialize "$SERIALIZE_ROOT" \
+          -num_queries $SYNTHETIC_QUERY_SIZE \
+          -query_type "$query_type" \
+          -selectivity $SYNTHETIC_QUERY_SELECTIVITY &
+      fi
+    done
+  done
+done
+
+for job in $(jobs -p); do
+  echo "Job finished, PID $job"
+  wait $job || let "FAIL+=1"
+done
+
+if [[ "$FAIL" -ne 0 ]]; then
   echo "FAIL! ($FAIL)"
 fi

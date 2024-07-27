@@ -7,12 +7,14 @@ time_stat RunRangeQueryRTSpatial(const std::vector<box_t> &boxes,
                                  const std::vector<box_t> &queries,
                                  const BenchmarkConfig &config) {
   rtspatial::Stream stream;
-  rtspatial::SpatialIndex<coord_t, 2, false> index;
+  rtspatial::SpatialIndex<coord_t, 2> index;
   thrust::device_vector<rtspatial::Envelope<rtspatial::Point<coord_t, 2>>>
       d_boxes, d_queries;
   rtspatial::Config idx_config;
 
   idx_config.ptx_root = std::string(RTSPATIAL_PTX_DIR);
+  idx_config.intersect_cost_weight = 0.90;
+  idx_config.max_geometries = boxes.size();
 
   CopyBoxes(boxes, d_boxes);
   CopyBoxes(queries, d_queries);
@@ -27,11 +29,15 @@ time_stat RunRangeQueryRTSpatial(const std::vector<box_t> &boxes,
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     index.Clear();
     sw.start();
-    index.Insert(d_boxes, stream.cuda_stream());
+    index.Insert(
+        rtspatial::ArrayView<rtspatial::Envelope<rtspatial::Point<coord_t, 2>>>(
+            d_boxes),
+        stream.cuda_stream());
     stream.Sync();
     sw.stop();
     ts.insert_ms.push_back(sw.ms());
   }
+
   d_boxes.resize(0);
   d_boxes.shrink_to_fit();
 
@@ -77,12 +83,14 @@ RunRangeQueryRTSpatialVaryParallelism(const std::vector<box_t> &boxes,
                                       const std::vector<box_t> &queries,
                                       const BenchmarkConfig &config) {
   rtspatial::Stream stream;
-  rtspatial::SpatialIndex<coord_t, 2, false> index;
+  rtspatial::SpatialIndex<coord_t, 2> index;
   thrust::device_vector<rtspatial::Envelope<rtspatial::Point<coord_t, 2>>>
       d_boxes, d_queries;
   rtspatial::Config idx_config;
 
   idx_config.ptx_root = std::string(RTSPATIAL_PTX_DIR);
+  idx_config.intersect_cost_weight = 0.90;
+  idx_config.prefer_fast_build_query = false;
 
   CopyBoxes(boxes, d_boxes);
   CopyBoxes(queries, d_queries);
@@ -97,11 +105,15 @@ RunRangeQueryRTSpatialVaryParallelism(const std::vector<box_t> &boxes,
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     index.Clear();
     sw.start();
-    index.Insert(d_boxes, stream.cuda_stream());
+    index.Insert(
+        rtspatial::ArrayView<rtspatial::Envelope<rtspatial::Point<coord_t, 2>>>(
+            d_boxes),
+        stream.cuda_stream());
     stream.Sync();
     sw.stop();
     ts.insert_ms.push_back(sw.ms());
   }
+
   d_boxes.resize(0);
   d_boxes.shrink_to_fit();
 
@@ -123,6 +135,17 @@ RunRangeQueryRTSpatialVaryParallelism(const std::vector<box_t> &boxes,
     sw.stop();
     ts.query_ms.push_back(sw.ms());
   }
+
+  sw.start();
+  int pred = index.CalculateBestParallelism(d_queries, stream.cuda_stream());
+  sw.stop();
+  std::cout << "Predicated Parallelism " << pred << " Time " << sw.ms() << " ms"
+            << std::endl;
+
+  results.Clear(stream.cuda_stream());
+
+  index.IntersectsWhatQueryProfiling(d_queries, d_results.data(),
+                                     stream.cuda_stream(), pred);
 
   return ts;
 }

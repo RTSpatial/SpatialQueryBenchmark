@@ -23,7 +23,7 @@ function run_point_query_contains() {
   for wkt_file in "${DATASET_WKT_FILES[@]}"; do
     query_dir="${QUERY_ROOT}/${query_type}_queries_${CONTAINS_QUERY_SIZE}"
     query="${query_dir}/${wkt_file}"
-    log="${log_dir}/${query_type}_${query_type}_queries_${CONTAINS_QUERY_SIZE}/${index_type}/${wkt_file}.log"
+    log="${log_dir}/${query_type}_queries_${CONTAINS_QUERY_SIZE}/${index_type}/${wkt_file}.log"
 
     if [[ ! -f "${log}" ]]; then
       echo "${log}" | xargs dirname | xargs mkdir -p
@@ -58,7 +58,7 @@ function run_point_query_contains_vary_size() {
   for query_size in "${QUERY_VARY_SIZES[@]}"; do
     query_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
     query="${query_dir}/${wkt_file}"
-    log="${log_dir}/${query_type}_${query_type}_queries_${query_size}/${index_type}/${wkt_file}.log"
+    log="${log_dir}/${query_type}_queries_${query_size}/${index_type}/${wkt_file}.log"
 
     if [[ ! -f "${log}" ]]; then
       echo "${log}" | xargs dirname | xargs mkdir -p
@@ -121,7 +121,7 @@ function run_range_query_contains_vary_size() {
   for query_size in "${QUERY_VARY_SIZES[@]}"; do
     query_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
     query="${query_dir}/${wkt_file}"
-    log="${log_dir}/${query_type}_${query_type}_queries_${query_size}/${index_type}/${wkt_file}.log"
+    log="${log_dir}/${query_type}_queries_${query_size}/${index_type}/${wkt_file}.log"
 
     if [[ ! -f "${log}" ]]; then
       echo "${log}" | xargs dirname | xargs mkdir -p
@@ -175,6 +175,39 @@ function run_range_query_intersects() {
   done
 }
 
+function vary_parallelism_range_query_intersects() {
+  query_type="range-intersects"
+  index_type="rtspatial-vary-parallelism"
+
+  for wkt_file in "${DATASET_WKT_FILES[@]}"; do
+      selectivity="0.0001"
+      query_dir="${QUERY_ROOT}/${query_type}_select_${selectivity}_queries_${RAY_DUP_INTERSECTS_QUERY_SIZE}"
+      query="${query_dir}/${wkt_file}"
+      log="${log_dir}/ray_duplication_${query_type}_select_${selectivity}_queries_${RAY_DUP_INTERSECTS_QUERY_SIZE}/${index_type}/${wkt_file}.log"
+
+      if [[ ! -f "${log}" ]]; then
+        echo "$log" | xargs dirname | xargs mkdir -p
+
+        echo "Running query $query"
+        cmd="${BENCHMARK_ROOT}/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+          -query $query \
+          -serialize $SERIALIZE_ROOT \
+          -query_type ${query_type} \
+          -index_type $index_type \
+          -parallelism 512 \
+          -avg_time=false \
+          -load_factor=0.8"
+
+        echo "$cmd" >"${log}.tmp"
+        eval "$cmd" 2>&1 | tee -a "${log}.tmp"
+
+        if grep -q "Query Time" "${log}.tmp"; then
+          mv "${log}.tmp" "${log}"
+        fi
+      fi
+  done
+}
+
 # CPU-based "rtree" "cgal"
 # GPU-based "cuspatial" "lbvh" "rtspatial"
 
@@ -197,3 +230,5 @@ done
 for index_type in "lbvh" "rtspatial"; do
   run_range_query_contains_vary_size "$index_type"
 done
+
+vary_parallelism_range_query_intersects

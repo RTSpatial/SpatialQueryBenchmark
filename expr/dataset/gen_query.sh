@@ -25,6 +25,7 @@ function gen_point_query_contains() {
       mkdir -p "$output_dir"
       echo "Generating $output"
       "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
+        -serialize "$SERIALIZE_ROOT" \
         -output "$output" \
         -num_queries $CONTAINS_QUERY_SIZE \
         -query_type "$query_type"
@@ -43,7 +44,7 @@ function gen_point_query_contains_vary_size() {
       mkdir -p "$output_dir"
       echo "Generating $output, size $query_size"
       "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
-        -serialize $SERIALIZE_ROOT \
+        -serialize "$SERIALIZE_ROOT" \
         -output "$output" \
         -num_queries $query_size \
         -query_type "$query_type"
@@ -61,7 +62,7 @@ function gen_range_query_contains() {
       mkdir -p "$output_dir"
       echo "Generating $output"
       "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
-        -serialize $SERIALIZE_ROOT \
+        -serialize "$SERIALIZE_ROOT" \
         -output "$output" \
         -num_queries $CONTAINS_QUERY_SIZE \
         -query_type "$query_type"
@@ -80,7 +81,7 @@ function gen_range_query_contains_vary_size() {
       mkdir -p "$output_dir"
       echo "Generating $output"
       "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
-        -serialize $SERIALIZE_ROOT \
+        -serialize "$SERIALIZE_ROOT" \
         -output "$output" \
         -num_queries $query_size \
         -query_type "$query_type"
@@ -90,19 +91,20 @@ function gen_range_query_contains_vary_size() {
 
 function gen_range_query_intersects() {
   query_type="range-intersects"
+  query_size=$1
   for wkt_file in "${DATASET_WKT_FILES[@]}"; do
     for selectivity in "${RANGE_QUERY_INTERSECTS_SELECTIVITIES[@]}"; do
-      output_dir="${QUERY_ROOT}/${query_type}_select_${selectivity}_queries_${INTERSECTS_QUERY_SIZE}"
+      output_dir="${QUERY_ROOT}/${query_type}_select_${selectivity}_queries_${query_size}"
       output="${output_dir}/${wkt_file}"
 
       if [[ ! -f "$output" ]]; then
         mkdir -p "$output_dir"
         echo "Generating $output"
         "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
-          -serialize $SERIALIZE_ROOT \
+          -serialize "$SERIALIZE_ROOT" \
           -output "$output" \
           -selectivity $selectivity \
-          -num_queries $INTERSECTS_QUERY_SIZE \
+          -num_queries $query_size \
           -query_type "$query_type"
       fi
     done
@@ -115,5 +117,6 @@ gen_point_query_contains_vary_size
 gen_range_query_contains
 gen_range_query_contains_vary_size
 
-gen_range_query_intersects
+gen_range_query_intersects $INTERSECTS_QUERY_SIZE
+gen_range_query_intersects $RAY_DUP_INTERSECTS_QUERY_SIZE
 

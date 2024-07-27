@@ -4,6 +4,7 @@
 #include "benchmark_configs.h"
 #include "query/boost/point_query.h"
 #include "query/boost/range_query.h"
+#include "query/boost/update.h"
 #include "query/cgal/point_query.h"
 #include "query/glin/range_query.h"
 
@@ -12,6 +13,7 @@
 #include "query/lbvh/range_query.h"
 #include "query/rtspatial/point_query.h"
 #include "query/rtspatial/range_query.h"
+#include "query/rtspatial/update.h"
 #endif
 #include "flags.h"
 
@@ -67,7 +69,6 @@ int main(int argc, char *argv[]) {
       break;
 #endif
     case BenchmarkConfig::IndexType::kGLIN:
-      //      ts = RunPointQueryGLIN(geoms, queries, conf);
       std::cout << "Unsupported" << std::endl;
       abort();
       break;
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]) {
     break;
   }
   case BenchmarkConfig::QueryType::kRangeContains:
-  case BenchmarkConfig::QueryType::kRangeIntersects:
+  case BenchmarkConfig::QueryType::kRangeIntersects: {
     auto queries = LoadBoxes(conf.query, conf.limit);
 
     switch (conf.index_type) {
@@ -112,6 +113,26 @@ int main(int argc, char *argv[]) {
     }
     break;
   }
+  case BenchmarkConfig::QueryType::kInsertion: {
+    switch (conf.index_type) {
+    case BenchmarkConfig::IndexType::kRTSpatial:
+      ts = RunInsertionRTSpatial(geoms, conf);
+      break;
+    }
+    break;
+  }
+  case BenchmarkConfig::QueryType::kDeletion: {
+    switch (conf.index_type) {
+    case BenchmarkConfig::IndexType::kRTSpatial:
+      ts = RunDeletionRTSpatial(geoms, conf);
+      break;
+    }
+    break;
+  }
+  default:
+    std::cerr << "Invalid Query Type" << std::endl;
+    abort();
+  }
 
   if (!ts.insert_ms.empty()) {
     std::cout << "Loading Time " << GetAverageTime(ts.insert_ms, conf) << " ms"
@@ -122,7 +143,6 @@ int main(int argc, char *argv[]) {
     std::cout << "Geoms " << ts.num_geoms << std::endl;
     std::cout << "Queries " << ts.num_queries << std::endl;
     if (conf.avg_time) {
-
       std::cout << "Query Time " << GetAverageTime(ts.query_ms, conf) << " ms"
                 << std::endl;
     } else {
@@ -135,6 +155,12 @@ int main(int argc, char *argv[]) {
     std::cout << "Selectivity: "
               << (double)ts.num_results / (ts.num_queries * ts.num_geoms)
               << std::endl;
+  }
+
+  if (ts.num_inserts > 0) {
+    std::cout << "Insertion throughput "
+              << ts.num_inserts / (GetAverageTime(ts.insert_ms, conf) / 1000.0)
+              << " geoms/sec" << std::endl;
   }
 
   gflags::ShutDownCommandLineFlags();

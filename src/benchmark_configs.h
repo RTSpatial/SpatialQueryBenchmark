@@ -9,7 +9,14 @@
 #include <unistd.h>
 
 struct BenchmarkConfig {
-  enum class QueryType { kPointContains, kRangeContains, kRangeIntersects };
+  enum class QueryType {
+    kPointContains,
+    kRangeContains,
+    kRangeIntersects,
+    kBulkLoading,
+    kInsertion,
+    kDeletion
+  };
 
   enum class IndexType {
     kCGAL,
@@ -32,6 +39,7 @@ struct BenchmarkConfig {
   QueryType query_type;
   IndexType index_type;
   float load_factor;
+  int batch;
 
   static BenchmarkConfig GetConfig() {
     BenchmarkConfig config;
@@ -47,6 +55,7 @@ struct BenchmarkConfig {
     config.repeat = FLAGS_repeat;
     config.parallelism = FLAGS_parallelism;
     config.avg_time = FLAGS_avg_time;
+    config.batch = FLAGS_batch;
 
     if (config.limit == -1) {
       config.limit = std::numeric_limits<int>::max();
@@ -61,7 +70,7 @@ struct BenchmarkConfig {
       abort();
     }
 
-    if (access(config.query.c_str(), R_OK) != 0) {
+    if (!config.query.empty() && access(config.query.c_str(), R_OK) != 0) {
       std::cerr << "Cannot open " << config.query << std::endl;
       abort();
     }
@@ -72,6 +81,12 @@ struct BenchmarkConfig {
       config.query_type = BenchmarkConfig::QueryType::kRangeContains;
     } else if (FLAGS_query_type == "range-intersects") {
       config.query_type = BenchmarkConfig::QueryType::kRangeIntersects;
+    } else if (FLAGS_query_type == "bulk-loading") {
+      config.query_type = BenchmarkConfig::QueryType::kBulkLoading;
+    } else if (FLAGS_query_type == "insertion") {
+      config.query_type = BenchmarkConfig::QueryType::kInsertion;
+    } else if (FLAGS_query_type == "deletion") {
+      config.query_type = BenchmarkConfig::QueryType::kDeletion;
     } else {
       std::cerr << "Invalid query " << FLAGS_query << std::endl;
       abort();

@@ -6,13 +6,14 @@ time_stat RunPointQueryRTSpatial(const std::vector<box_t> &boxes,
                                  const std::vector<point_t> &queries,
                                  const BenchmarkConfig &config) {
   rtspatial::Stream stream;
-  rtspatial::SpatialIndex<coord_t, 2, true> index;
+  rtspatial::SpatialIndex<coord_t, 2> index;
   thrust::device_vector<rtspatial::Envelope<rtspatial::Point<coord_t, 2>>>
       d_boxes;
   thrust::device_vector<rtspatial::Point<coord_t, 2>> d_queries;
   rtspatial::Config idx_config;
 
   idx_config.ptx_root = std::string(RTSPATIAL_PTX_DIR);
+  idx_config.max_geometries = boxes.size();
 
   CopyBoxes(boxes, d_boxes);
   CopyPoints(queries, d_queries);
@@ -36,11 +37,15 @@ time_stat RunPointQueryRTSpatial(const std::vector<box_t> &boxes,
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     index.Clear();
     sw.start();
-    index.Insert(d_boxes, stream.cuda_stream());
+    index.Insert(
+        rtspatial::ArrayView<rtspatial::Envelope<rtspatial::Point<coord_t, 2>>>(
+            d_boxes),
+        stream.cuda_stream());
     stream.Sync();
     sw.stop();
     ts.insert_ms.push_back(sw.ms());
   }
+
   d_boxes.resize(0);
   d_boxes.shrink_to_fit();
 
