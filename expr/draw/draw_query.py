@@ -83,10 +83,10 @@ def get_running_time_vary_parallelism(prefix, datasets):
     backward_time = np.asarray(backward_time)
     total_time = predicate_time + forward_time + bvh_time + backward_time
 
-    time_breakdown = pd.DataFrame({"Predication": predicate_time / total_time,
-                                   "Forward Pass": forward_time / total_time,
-                                   "BVH Buildup": bvh_time / total_time,
-                                   "Backward Pass": backward_time / total_time})
+    time_breakdown = pd.DataFrame({"Predication": predicate_time / total_time * 100,
+                                   "Forward Pass": forward_time / total_time * 100,
+                                   "BVH Buildup": bvh_time / total_time * 100,
+                                   "Backward Pass": backward_time / total_time * 100})
 
     return predicated_parallelism, dataset_query_time, time_breakdown
 
@@ -122,7 +122,7 @@ def draw_point_query(prefix, ):
     index_labels = ("Boost", "CGAL", "cuSpatial", "LBVH", "RTSpatial")
 
     loc = [x for x in range(len(dataset_labels))]
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(4.8, 7,))
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5.5, 7.4))  # figsize=(4.8, 7,) looks good
 
     ax1 = axes[0]
     ax2 = axes[1]
@@ -206,7 +206,7 @@ def draw_range_contains_query(prefix, ):
     index_labels = ("Boost", "GLIN", "LBVH", "RTSpatial")
 
     loc = [x for x in range(len(dataset_labels))]
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(4.8, 7,))
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5.5, 7.4))
 
     ax1 = axes[0]
     ax2 = axes[1]
@@ -438,17 +438,17 @@ def draw_vary_rays(prefix):
                fontsize=11, borderaxespad=0.2, frameon=False)
 
     time_breakdown.plot(kind="bar", stacked=True, ax=ax2, color=slicedCM)
-    bars = [thing for thing in ax2.containers if isinstance(thing, matplotlib.container.BarContainer)]
+    # bars = [thing for thing in ax2.containers if isinstance(thing, matplotlib.container.BarContainer)]
 
-    patterns = ('', 'xx', '//', r'\\', '\\', '*', 'o', 'O', '.')
-    for i, bar in zip(range(len(bars)), bars):
-        for patch in bar:
-            patch.set_hatch(patterns[i])
+    # patterns = ('', '//', 'xx', r'\\', '\\', '*', 'o', 'O', '.')
+    # for i, bar in zip(range(len(bars)), bars):
+    #     for patch in bar:
+    #         patch.set_hatch(patterns[i])
 
     loc = [x for x in range(len(dataset_labels))]
     ax2.set_xticks(loc, dataset_labels, rotation=0)
     ax2.set_xlabel("(b) Running Time Breakdown")
-    ax2.set_ylabel(ylabel='Time (%)', labelpad=1)
+    ax2.set_ylabel(ylabel='Time Percentage (%)', labelpad=1)
     # handletextpad=0.3,
     # fontsize=11, borderaxespad=0.2, frameon=False,
     ax2.legend(loc='upper left', ncol=2,
