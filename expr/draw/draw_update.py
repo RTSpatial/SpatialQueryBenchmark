@@ -44,9 +44,28 @@ def get_update_throughput(prefix, op, dataset, batch_sizes):
     return np.asarray(throughput_list)
 
 
+def get_query_performance_slowdown(prefix, op, dataset, query_size, update_ratios):
+    slowdown_list = []
+    for ratio in update_ratios:
+        path = os.path.join(prefix, op + "_update_" + ratio + "_queries_" + query_size, dataset)
+        with open(path, 'r') as fi:
+            query_time = None
+            query_time_updated = None
+            for line in fi:
+                m = re.search(r"Query Time (\d.*?) ms", line)
+                if m is not None:
+                    query_time = float(m.groups()[0])
+                m = re.search(r"Query Time After Updates (.*?) ms", line)
+                if m is not None:
+                    query_time_updated = float(m.groups()[0])
+            slowdown_list.append(query_time_updated / query_time)
+    return np.asarray(slowdown_list)
+
+
 patterns = ['', '\\\\', '\\\\--', '..', '..--']
 light_colors = ['#6C87EA', 'lightcoral', '#FF3333', 'lemonchiffon', '#FFDF33', 'powderblue', '#33FFFF', ]
 series_id = 1
+
 
 def scale_size(size_list, k_scale=1000):
     return tuple(str(int(kb)) + "K" if kb < k_scale else str(int(kb / k_scale)) + "M" for kb in
@@ -102,8 +121,41 @@ def draw_batch_throughput(prefix):
     plt.show()
 
 
+def draw_update_query(prefix):
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4.5))
+    cmap = plt.get_cmap('gist_gray')
+    dataset = "parks_Europe.wkt.log"
+    update_ratios = ("0.0002", "0.002", "0.02", "0.2",)
+
+    point_contains_slowdown = get_query_performance_slowdown(prefix, "point-contains", dataset, "100000", update_ratios)
+    range_contains_slowdown = get_query_performance_slowdown(prefix, "range-contains", dataset, "100000", update_ratios)
+    range_intersects_slowdown = get_query_performance_slowdown(prefix, "range-intersects", dataset, "10000",
+                                                               update_ratios)
+
+    df = pd.DataFrame.from_dict(
+        {"Point Query": point_contains_slowdown, "Range Contains Query": range_contains_slowdown,
+         "Range Intersects Query": range_intersects_slowdown}, )
+    df.index = [str(float(r) * 100) + "%" for r in update_ratios]
+
+    slicedCM = cmap(np.linspace(0, 1, 3))
+    slicedCM = slicedCM[::-1]
+    df.plot(kind="bar", ax=ax, rot=0, color=slicedCM, edgecolor='black', )
+
+    ax.margins(x=0.05, y=0.38)
+    ax.set_xlabel(xlabel="Update Ratio")
+    ax.set_ylabel(ylabel='Query Performance Slowdown', labelpad=1)
+    ax.legend(loc='upper left',
+              ncol=1, handletextpad=0.3,
+              fontsize=11, borderaxespad=0.2, frameon=False)
+
+    fig.tight_layout()
+    fig.savefig('update_query.pdf', format='pdf', bbox_inches='tight')
+    # plt.show()
+
+
 if __name__ == '__main__':
     dir = os.path.dirname(sys.argv[0]) + "/../query/logs"
 
-    draw_bulk_time(dir)
+    # draw_bulk_time(dir)
     # draw_batch_throughput(dir)
+    draw_update_query(dir)

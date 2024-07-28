@@ -67,39 +67,40 @@ function run_update_batch() {
 }
 
 function run_update_query() {
-  wkt_file="parks_Europe.wkt"
   selectivity="0.001"
-  for query_type in "point-contains" "range-contains" "range-intersects"; do
-    if [[ $query_type == "range-intersects" ]]; then
-      query_size=$INTERSECTS_QUERY_SIZE
-      query_dir="${QUERY_ROOT}/${query_type}_select_${selectivity}_queries_${INTERSECTS_QUERY_SIZE}"
-    else
-      query_size=$CONTAINS_QUERY_SIZE
-      query_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
-    fi
+  for wkt_file in "${DATASET_WKT_FILES[@]}"; do
+    for query_type in "point-contains" "range-contains" "range-intersects"; do
+      if [[ $query_type == "range-intersects" ]]; then
+        query_size=$INTERSECTS_QUERY_SIZE
+        query_dir="${QUERY_ROOT}/${query_type}_select_${selectivity}_queries_${INTERSECTS_QUERY_SIZE}"
+      else
+        query_size=$CONTAINS_QUERY_SIZE
+        query_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
+      fi
 
-    query="${query_dir}/${wkt_file}"
+      query="${query_dir}/${wkt_file}"
 
-    for ratio in "${UPDATE_RATIOS[@]}"; do
-      log="${log_dir}/${query_type}_update_${ratio}_queries_${query_size}/${wkt_file}.log"
+      for ratio in "${UPDATE_RATIOS[@]}"; do
+        log="${log_dir}/${query_type}_update_${ratio}_queries_${query_size}/${wkt_file}.log"
 
-      if [[ ! -f "${log}" ]]; then
-        echo "${log}" | xargs dirname | xargs mkdir -p
+        if [[ ! -f "${log}" ]]; then
+          echo "${log}" | xargs dirname | xargs mkdir -p
 
-        cmd="$BENCHMARK_ROOT/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+          cmd="$BENCHMARK_ROOT/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
         -query $query \
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
         -index_type rtspatial \
         -update_ratio $ratio"
 
-        echo "$cmd" >"${log}.tmp"
-        eval "$cmd" 2>&1 | tee -a "${log}.tmp"
+          echo "$cmd" >"${log}.tmp"
+          eval "$cmd" 2>&1 | tee -a "${log}.tmp"
 
-        if grep -q "Time" "${log}.tmp"; then
-          mv "${log}.tmp" "${log}"
+          if grep -q "Time" "${log}.tmp"; then
+            mv "${log}.tmp" "${log}"
+          fi
         fi
-      fi
+      done
     done
   done
 }
