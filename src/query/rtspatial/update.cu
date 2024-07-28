@@ -3,6 +3,7 @@
 #include "rtspatial/rtspatial.h"
 #include "stopwatch.h"
 
+
 time_stat RunInsertionRTSpatial(const std::vector<box_t> &boxes,
                                 const BenchmarkConfig &config) {
   rtspatial::Stream stream;
@@ -185,3 +186,4 @@ time_stat RunDeletionRTSpatial(const std::vector<box_t> &boxes,
   }
   return ts;
 }
+

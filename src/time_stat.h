@@ -5,6 +5,7 @@
 
 struct time_stat {
   std::vector<double> query_ms;
+  std::vector<double> query_ms_after_update;
   std::vector<double> insert_ms;
   std::vector<double> delete_ms;
   std::vector<double> update_ms;

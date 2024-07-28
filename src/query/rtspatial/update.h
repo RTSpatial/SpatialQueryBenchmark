@@ -9,4 +9,6 @@ time_stat RunInsertionRTSpatial(const std::vector<box_t> &boxes,
 
 time_stat RunDeletionRTSpatial(const std::vector<box_t> &boxes,
                                const BenchmarkConfig &config);
+
+
 #endif // SPATIALQUERYBENCHMARK_RTSPATIAL_UPDATE_H

@@ -26,6 +26,15 @@ time_stat RunRangeQueryRTSpatial(const std::vector<box_t> &boxes,
   ts.num_geoms = boxes.size();
   ts.num_queries = queries.size();
 
+  rtspatial::Queue<thrust::pair<uint32_t, uint32_t>> results;
+  rtspatial::SharedValue<
+      rtspatial::Queue<thrust::pair<uint32_t, uint32_t>>::device_t>
+      d_results;
+
+  results.Init(std::max(
+      1ul, (size_t)(boxes.size() * queries.size() * config.load_factor)));
+  d_results.set(stream.cuda_stream(), results.DeviceObject());
+
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     index.Clear();
     sw.start();
@@ -38,42 +47,56 @@ time_stat RunRangeQueryRTSpatial(const std::vector<box_t> &boxes,
     ts.insert_ms.push_back(sw.ms());
   }
 
-  d_boxes.resize(0);
-  d_boxes.shrink_to_fit();
+  auto updates = GenerateUpdates(boxes, config.update_ratio);
 
-  rtspatial::Queue<thrust::pair<uint32_t, uint32_t>> results;
-  rtspatial::SharedValue<
-      rtspatial::Queue<thrust::pair<uint32_t, uint32_t>>::device_t>
-      d_results;
+  auto run_queries = [&](std::vector<double> &running_times) {
+    for (int i = 0; i < config.warmup + config.repeat; i++) {
+      results.Clear(stream.cuda_stream());
+      sw.start();
+      switch (config.query_type) {
+      case BenchmarkConfig::QueryType::kRangeContains: {
+        index.ContainsWhatQuery(d_queries, d_results.data(),
+                                stream.cuda_stream());
+        break;
+      }
+      case BenchmarkConfig::QueryType::kRangeIntersects: {
+        int best_parallelism =
+            index.CalculateBestParallelism(d_queries, stream.cuda_stream());
+        index.IntersectsWhatQuery(d_queries, d_results.data(),
+                                  stream.cuda_stream(), best_parallelism);
+        break;
+      }
+      default:
+        abort();
+      }
+      // Implicit barrier
+      ts.num_results = results.size(stream.cuda_stream());
+      sw.stop();
+      running_times.push_back(sw.ms());
+    }
+  };
 
-  results.Init(std::max(
-      1ul, (size_t)(boxes.size() * queries.size() * config.load_factor)));
-  d_results.set(stream.cuda_stream(), results.DeviceObject());
+  if (!updates.empty()) {
+    index.Update(
+        rtspatial::ArrayView<thrust::pair<
+            size_t, rtspatial::Envelope<rtspatial::Point<coord_t, 2>>>>(
+            updates),
+        stream.cuda_stream());
+    stream.Sync();
 
-  for (int i = 0; i < config.warmup + config.repeat; i++) {
-    results.Clear(stream.cuda_stream());
-    sw.start();
-    switch (config.query_type) {
-    case BenchmarkConfig::QueryType::kRangeContains: {
-      index.ContainsWhatQuery(d_queries, d_results.data(),
-                              stream.cuda_stream());
-      break;
-    }
-    case BenchmarkConfig::QueryType::kRangeIntersects: {
-      int best_parallelism =
-          index.CalculateBestParallelism(d_queries, stream.cuda_stream());
-      index.IntersectsWhatQuery(d_queries, d_results.data(),
-                                stream.cuda_stream(), best_parallelism);
-      break;
-    }
-    default:
-      abort();
-    }
-    // Implicit barrier
-    ts.num_results = results.size(stream.cuda_stream());
-    sw.stop();
-    ts.query_ms.push_back(sw.ms());
+    // Run Query after updates
+    run_queries(ts.query_ms_after_update);
+
+    UpdateBoxes(d_boxes, updates);
+    // Rebuild Index on updated geometries
+    index.Clear();
+    index.Insert(
+        rtspatial::ArrayView<rtspatial::Envelope<rtspatial::Point<coord_t, 2>>>(
+            d_boxes),
+        stream.cuda_stream());
   }
+
+  run_queries(ts.query_ms);
 
   return ts;
 }

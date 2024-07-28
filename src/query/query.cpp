@@ -157,6 +157,19 @@ int main(int argc, char *argv[]) {
               << std::endl;
   }
 
+  if (!ts.query_ms_after_update.empty()) {
+    if (conf.avg_time) {
+      std::cout << "Query Time After Updates "
+                << GetAverageTime(ts.query_ms_after_update, conf) << " ms"
+                << std::endl;
+    } else {
+      for (size_t i = 0; i < ts.query_ms_after_update.size(); i++) {
+        std::cout << i << ", Query Time After Updates "
+                  << ts.query_ms_after_update[i] << " ms" << std::endl;
+      }
+    }
+  }
+
   if (ts.num_inserts > 0) {
     std::cout << "Insertion throughput "
               << ts.num_inserts / (GetAverageTime(ts.insert_ms, conf) / 1000.0)

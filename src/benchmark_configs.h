@@ -40,6 +40,7 @@ struct BenchmarkConfig {
   IndexType index_type;
   float load_factor;
   int batch;
+  float update_ratio;
 
   static BenchmarkConfig GetConfig() {
     BenchmarkConfig config;
@@ -56,6 +57,7 @@ struct BenchmarkConfig {
     config.parallelism = FLAGS_parallelism;
     config.avg_time = FLAGS_avg_time;
     config.batch = FLAGS_batch;
+    config.update_ratio = FLAGS_update_ratio;
 
     if (config.limit == -1) {
       config.limit = std::numeric_limits<int>::max();

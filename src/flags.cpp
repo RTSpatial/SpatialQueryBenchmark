@@ -22,3 +22,4 @@ DEFINE_string(index_type, "", "rtree/rtree-parallel/glin/lbvh");
 DEFINE_int32(parallelism, -1, "#of cores for CPU baselines");
 DEFINE_bool(avg_time, true, "Report average time or list all times");
 DEFINE_int32(batch, -1, "Batch size of insertion/deletion");
+DEFINE_double(update_ratio, 0, "");
