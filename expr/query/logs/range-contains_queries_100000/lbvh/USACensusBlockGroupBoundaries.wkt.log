@@ -1,0 +1,8 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/USACensusBlockGroupBoundaries.wkt         -query /local/storage/liang/rtspatial/datasets/queries/range-contains_queries_100000/USACensusBlockGroupBoundaries.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type range-contains         -index_type lbvh         -load_factor 0.001
+Loaded geometries 248954
+Loading Time 2.0492 ms
+Geoms 248954
+Queries 100000
+Query Time 0.318 ms
+Results 120457
+Selectivity: 4.83852e-06

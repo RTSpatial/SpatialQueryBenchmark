@@ -1,0 +1,19 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/USACensusBlockGroupBoundaries.wkt           -query /local/storage/liang/rtspatial/datasets/queries/range-intersects_select_0.001_queries_50000/USACensusBlockGroupBoundaries.wkt           -serialize /local/storage/liang/rtspatial/ser           -query_type range-intersects           -index_type rtspatial-vary-parallelism           -parallelism 512           -avg_time=false           -load_factor=0.85
+Loaded geometries 248954
+Predicated Parallelism 32 Time 0.095 ms
+Forward pass 0.554 ms, results 33768 BVH 0.542 ms, Backward pass 5.385 ms, results 50402359
+Loading Time 1.0154 ms
+Geoms 248954
+Queries 50000
+0, Query Time 34.487 ms
+1, Query Time 19.425 ms
+2, Query Time 11.081 ms
+3, Query Time 6.925 ms
+4, Query Time 6.071 ms
+5, Query Time 6.471 ms
+6, Query Time 7.653 ms
+7, Query Time 9.863 ms
+8, Query Time 13.764 ms
+9, Query Time 20.885 ms
+Results 50436127
+Selectivity: 0.00405184

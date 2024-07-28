@@ -1,0 +1,19 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/parks_Europe.wkt           -query /local/storage/liang/rtspatial/datasets/queries/range-intersects_select_0.0001_queries_50000/parks_Europe.wkt           -serialize /local/storage/liang/rtspatial/ser           -query_type range-intersects           -index_type rtspatial-vary-parallelism           -parallelism 512           -avg_time=false           -load_factor=0.85
+Loaded geometries 1856318
+Predicated Parallelism 8 Time 0.079 ms
+Forward pass 0.273 ms, results 6370 BVH 0.656 ms, Backward pass 21.906 ms, results 32913979
+Loading Time 5.2626 ms
+Geoms 1856318
+Queries 50000
+0, Query Time 41.171 ms
+1, Query Time 35.95 ms
+2, Query Time 29.425 ms
+3, Query Time 24.101 ms
+4, Query Time 17.832 ms
+5, Query Time 21.617 ms
+6, Query Time 29.093 ms
+7, Query Time 43.451 ms
+8, Query Time 69.994 ms
+9, Query Time 113.585 ms
+Results 32920349
+Selectivity: 0.000354684

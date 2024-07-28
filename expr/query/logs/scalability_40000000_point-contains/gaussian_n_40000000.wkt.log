@@ -1,0 +1,8 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/synthetic/gaussian_n_40000000.wkt           -query /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_10000/gaussian_n_40000000.wkt           -serialize /local/storage/liang/rtspatial/ser           -query_type point-contains           -index_type rtspatial           -load_factor 0.0001
+Loaded geometries 40000000
+Loading Time 119.04 ms
+Geoms 40000000
+Queries 10000
+Query Time 121.656 ms
+Results 39176560
+Selectivity: 9.79414e-05

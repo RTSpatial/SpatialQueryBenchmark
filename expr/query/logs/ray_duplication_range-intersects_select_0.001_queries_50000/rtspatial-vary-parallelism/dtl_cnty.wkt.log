@@ -1,0 +1,19 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/dtl_cnty.wkt           -query /local/storage/liang/rtspatial/datasets/queries/range-intersects_select_0.001_queries_50000/dtl_cnty.wkt           -serialize /local/storage/liang/rtspatial/ser           -query_type range-intersects           -index_type rtspatial-vary-parallelism           -parallelism 512           -avg_time=false           -load_factor=0.85
+Loaded geometries 12234
+Predicated Parallelism 32 Time 0.062 ms
+Forward pass 0.101 ms, results 30201 BVH 0.494 ms, Backward pass 0.767 ms, results 5641495
+Loading Time 0.4382 ms
+Geoms 12234
+Queries 50000
+0, Query Time 15.791 ms
+1, Query Time 9.223 ms
+2, Query Time 5.03 ms
+3, Query Time 2.907 ms
+4, Query Time 2.244 ms
+5, Query Time 1.34 ms
+6, Query Time 1.268 ms
+7, Query Time 1.35 ms
+8, Query Time 1.587 ms
+9, Query Time 1.962 ms
+Results 5671696
+Selectivity: 0.00927202

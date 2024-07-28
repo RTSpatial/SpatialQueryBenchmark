@@ -1,0 +1,8 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/synthetic/gaussian_n_20000000.wkt           -query /local/storage/liang/rtspatial/datasets/queries/range-intersects_select_0.00001_queries_10000/gaussian_n_20000000.wkt           -serialize /local/storage/liang/rtspatial/ser           -query_type range-intersects           -index_type rtspatial           -load_factor 0.003
+Loaded geometries 20000000
+Loading Time 59.2596 ms
+Geoms 20000000
+Queries 10000
+Query Time 435.774 ms
+Results 292563663
+Selectivity: 0.00146282

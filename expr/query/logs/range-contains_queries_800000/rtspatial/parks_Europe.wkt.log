@@ -1,0 +1,8 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/parks_Europe.wkt         -query /local/storage/liang/rtspatial/datasets/queries/range-contains_queries_800000/parks_Europe.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type range-contains         -index_type rtspatial         -load_factor 0.001
+Loaded geometries 1856318
+Loading Time 5.1904 ms
+Geoms 1856318
+Queries 800000
+Query Time 0.2644 ms
+Results 835864
+Selectivity: 5.62851e-07

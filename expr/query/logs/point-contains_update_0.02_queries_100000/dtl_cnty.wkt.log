@@ -1,0 +1,9 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/dtl_cnty.wkt         -query /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/dtl_cnty.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type point-contains         -index_type rtspatial         -update_ratio 0.02
+Loaded geometries 12234
+Loading Time 0.4272 ms
+Geoms 12234
+Queries 100000
+Query Time 0.0828 ms
+Results 201285
+Selectivity: 0.000164529
+Query Time After Updates 0.1166 ms

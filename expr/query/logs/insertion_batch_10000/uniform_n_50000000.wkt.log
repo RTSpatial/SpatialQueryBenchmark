@@ -1,0 +1,3 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/synthetic/uniform_n_50000000.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type insertion         -index_type rtspatial         -batch 10000
+Loaded geometries 50000000
+Batch 10000 Geoms 50000000 Insert Time 2701.59 ms Throughput 1.85076e+07 geos/sec

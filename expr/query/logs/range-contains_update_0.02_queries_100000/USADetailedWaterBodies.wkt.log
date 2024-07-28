@@ -1,0 +1,9 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/USADetailedWaterBodies.wkt         -query /local/storage/liang/rtspatial/datasets/queries/range-contains_queries_100000/USADetailedWaterBodies.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type range-contains         -index_type rtspatial         -update_ratio 0.02
+Loaded geometries 463595
+Loading Time 1.5484 ms
+Geoms 463595
+Queries 100000
+Query Time 0.1744 ms
+Results 157435
+Selectivity: 3.39596e-06
+Query Time After Updates 0.4332 ms

@@ -1,0 +1,8 @@
+/home/geng.161/SpatialQueryBenchmark/build/query -geom /home/geng.161/rtspatial/datasets/polygons/parks_Europe.wkt         -query /home/geng.161/rtspatial/datasets/queries/range-contains_queries_400000/parks_Europe.wkt         -serialize /home/geng.161/rtspatial/ser         -query_type range-contains         -index_type glin         -load_factor 0.001
+Loaded geometries 1856318
+Loading Time 236.029 ms
+Geoms 1856318
+Queries 400000
+Query Time 705.858 ms
+Results 417957
+Selectivity: 5.62884e-07

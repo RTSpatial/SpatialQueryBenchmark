@@ -1,0 +1,8 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/parks_Europe.wkt         -query /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/parks_Europe.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type point-contains         -index_type lbvh         -load_factor 0.001
+Loaded geometries 1856318
+Loading Time 11.3844 ms
+Geoms 1856318
+Queries 100000
+Query Time 0.6416 ms
+Results 109279
+Selectivity: 5.88687e-07
