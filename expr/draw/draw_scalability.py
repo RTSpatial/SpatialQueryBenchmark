@@ -36,26 +36,29 @@ def get_running_time(prefix, size_list, dist, query_type):
 def draw_query(prefix, ):
     geom_sizes = ("10000000", "20000000", "30000000", "40000000", "50000000")
     geom_sizes_labels = scale_size([int(s) for s in geom_sizes])
-
-    loc = [x for x in range(len(geom_sizes))]
-    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 3.2,))
+    plt.rcParams.update({'font.size': 13})
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(8, 3.,))
 
     ax1 = axes[0]
-    ax2 = axes[1]
-    ax3 = axes[2]
+    # ax2 = axes[1]
+    ax3 = axes[1]
 
     query_time_uniform = get_running_time(prefix, geom_sizes, "uniform", "point-contains")
     query_time_gaussian = get_running_time(prefix, geom_sizes, "gaussian", "point-contains")
     df = pd.DataFrame.from_dict({"Uniform": query_time_uniform, "Gaussian": query_time_gaussian})
     df.index = geom_sizes_labels
 
+    print("Point Contains, Uniform", query_time_uniform)
+
     df.plot(kind="line", ax=ax1)
 
-    query_time_uniform = get_running_time(prefix, geom_sizes, "uniform", "range-contains")
-    query_time_gaussian = get_running_time(prefix, geom_sizes, "gaussian", "range-contains")
-    df = pd.DataFrame.from_dict({"Uniform": query_time_uniform, "Gaussian": query_time_gaussian})
-    df.index = geom_sizes_labels
-    df.plot(kind="line", ax=ax2)
+    # query_time_uniform = get_running_time(prefix, geom_sizes, "uniform", "range-contains")
+    # query_time_gaussian = get_running_time(prefix, geom_sizes, "gaussian", "range-contains")
+    # df = pd.DataFrame.from_dict({"Uniform": query_time_uniform, "Gaussian": query_time_gaussian})
+    # df.index = geom_sizes_labels
+    # df.plot(kind="line", ax=ax2)
+
+    # print("Range Contains, Uniform", query_time_uniform)
 
     query_time_uniform = get_running_time(prefix, geom_sizes, "uniform", "range-intersects")
     query_time_gaussian = get_running_time(prefix, geom_sizes, "gaussian", "range-intersects")
@@ -63,9 +66,10 @@ def draw_query(prefix, ):
     df.index = geom_sizes_labels
     df.plot(kind="line", ax=ax3)
 
-    titles = ("(a) Point Queries by Increasing Geometries",
-              "(b) Range-Contains Queries by Increasing Geometries",
-              "(c) Range-Intersects Queries by Increasing Geometries",)
+    print("Range Intersects, Uniform", query_time_uniform)
+
+    titles = ("(a) Point queries scalability",
+              "(c) Range-intersects queries scalability",)
 
     for i, ax in enumerate(axes):
         for j, line in enumerate(ax.get_lines()):
@@ -74,12 +78,12 @@ def draw_query(prefix, ):
 
         ax.set_xlabel(titles[i])
         ax.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
-        ax.margins(x=0.05, y=0.38)
+        ax.margins(x=0.05, y=0.25)
         ax.set_ylim(bottom=0)
         ax.legend(loc='upper left', ncol=3, handletextpad=0.3,
                   fontsize=11, borderaxespad=0.2, frameon=False)
 
-    fig.tight_layout()
+    fig.tight_layout(pad=0.1)
 
     fig.savefig("scalability.pdf", format='pdf', bbox_inches='tight')
     plt.show()

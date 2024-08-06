@@ -121,8 +121,10 @@ def draw_point_query(prefix, ):
     index_types = ("rtree", "cgal", "cuspatial", "lbvh", "rtspatial")
     index_labels = ("Boost", "CGAL", "cuSpatial", "LBVH", "RTSpatial")
 
+    plt.rcParams.update({'font.size': 14})
     loc = [x for x in range(len(dataset_labels))]
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5.5, 7.4))  # figsize=(4.8, 7,) looks good
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(11, 3.6))
+    fig.subplots_adjust(wspace=0.05)  # Adjust the width space between axes
 
     ax1 = axes[0]
     ax2 = axes[1]
@@ -139,6 +141,22 @@ def draw_point_query(prefix, ):
         index_loading_time[index_type] = loading_time
         index_query_time[index_type] = query_time
     index_query_time = pd.DataFrame.from_dict(index_query_time, )
+
+    print("Point Contains Summaries")
+
+    for i in range(len(datasets)):
+        rtree_time = index_query_time.iloc[i][0]
+        cgal_time = index_query_time.iloc[i][1]
+        cpu_time = min(rtree_time, cgal_time)
+        cuspatial_time = index_query_time.iloc[i][2]
+        lbvh_time = index_query_time.iloc[i][3]
+        gpu_time = min(cuspatial_time, lbvh_time)
+        rtspatial_time = index_query_time.iloc[i][4]
+        print("Dataset", datasets[i])
+        print("Speedup over best CPU", cpu_time / rtspatial_time)
+        print("Speedup over best GPU", gpu_time / rtspatial_time)
+        print()
+
     # 1. Choose your desired colormap
     cmap = plt.get_cmap('gist_gray')
 
@@ -147,24 +165,23 @@ def draw_point_query(prefix, ):
     slicedCM = slicedCM[::-1]
 
     index_query_time.columns = index_labels
-    bars = index_query_time.plot(kind="bar", width=0.7, ax=ax1, color=slicedCM, edgecolor='black', )
+    index_query_time.plot(kind="bar", width=0.85, ax=ax1, color=slicedCM, edgecolor='black', )
 
-    all_hatches = []
-    for i in range(len(index_types)):
-        all_hatches += [hatches[i] for _ in range(len(index_query_time))]
-
-    all_hatches.reverse()
-    for idx, patch in enumerate(bars.patches):
-        patch.set_hatch(all_hatches[idx])
+    bars = [thing for thing in ax1.containers if isinstance(thing, matplotlib.container.BarContainer)]
+    for i, bar in zip(range(len(bars)), bars):
+        for patch in bar:
+            patch.set_hatch(hatches[i])
 
     ax1.set_xticks(loc, dataset_labels, rotation=0)
     ax1.set_xlabel("(a) Execution Time on 100K Point Queries")
     ax1.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax1.set_yscale('log')
-    ax1.margins(x=0.01, y=0.35)
-
+    x0, x1 = ax1.get_xlim()
+    ax1.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
+    ax1.margins(y=0.2)
     ax1.legend(loc='upper left', ncol=3, handletextpad=0.3,
-               fontsize=11, borderaxespad=0.2, frameon=False)
+               borderaxespad=0.2, columnspacing=1, frameon=False,
+               ) # bbox_to_anchor=(-0.02, 1.25)
 
     # Varying sizes
     query_sizes = (50000, 100000, 200000, 400000, 800000,)
@@ -188,25 +205,27 @@ def draw_point_query(prefix, ):
 
     loc = [x for x in range(len(query_sizes))]
     ax2.set_xticks(loc, scale_size(query_sizes), rotation=0)
-    ax2.set_xlabel("(b) Varying Query Size on EuropeParks Dataset")
+    ax2.set_xlabel("(b) Varying query size on EUParks dataset")
     ax2.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax2.set_yscale('log')
-    ax2.margins(x=0.05, y=0.38)
+    ax2.margins(y=0.38)
     ax2.legend(loc='upper left', ncol=3, handletextpad=0.3,
-               fontsize=11, borderaxespad=0.2, frameon=False)
+               borderaxespad=0.2, columnspacing=1, frameon=False,
+               ) # bbox_to_anchor=(-0.02, 1.25)
 
-    fig.tight_layout()
+    fig.tight_layout(pad=0.)
 
     fig.savefig("point_query.pdf", format='pdf', bbox_inches='tight')
-    # plt.show()
-
+    plt.show()
 
 def draw_range_contains_query(prefix, ):
     index_types = ("rtree", "glin", "lbvh", "rtspatial")
     index_labels = ("Boost", "GLIN", "LBVH", "RTSpatial")
 
+    plt.rcParams.update({'font.size': 14})
     loc = [x for x in range(len(dataset_labels))]
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5.5, 7.4))
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10.5, 3.6))
+    fig.subplots_adjust(wspace=1)  # Adjust the width space between axes
 
     ax1 = axes[0]
     ax2 = axes[1]
@@ -223,6 +242,20 @@ def draw_range_contains_query(prefix, ):
         index_loading_time[index_type] = loading_time
         index_query_time[index_type] = query_time
     index_query_time = pd.DataFrame.from_dict(index_query_time, )
+
+    print("Range Contains Summaries")
+
+    for i in range(len(datasets)):
+        rtree_time = index_query_time.iloc[i][0]
+        glin_time = index_query_time.iloc[i][1]
+        cpu_time = min(rtree_time, glin_time)
+        lbvh_time = index_query_time.iloc[i][2]
+        rtspatial_time = index_query_time.iloc[i][3]
+        print("Dataset", datasets[i])
+        print("Speedup over best CPU", cpu_time / rtspatial_time)
+        print("Speedup over best GPU", lbvh_time / rtspatial_time)
+        print()
+
     # 1. Choose your desired colormap
     cmap = plt.get_cmap('gist_gray')
 
@@ -231,24 +264,24 @@ def draw_range_contains_query(prefix, ):
     slicedCM = slicedCM[::-1]
 
     index_query_time.columns = index_labels
-    bars = index_query_time.plot(kind="bar", width=0.7, ax=ax1, color=slicedCM, edgecolor='black', )
+    index_query_time.plot(kind="bar", width=0.8, ax=ax1, color=slicedCM, edgecolor='black', )
 
-    all_hatches = []
-    for i in range(len(index_types)):
-        all_hatches += [hatches[i] for _ in range(len(index_query_time))]
-
-    all_hatches.reverse()
-    for idx, patch in enumerate(bars.patches):
-        patch.set_hatch(all_hatches[idx])
+    bars = [thing for thing in ax1.containers if isinstance(thing, matplotlib.container.BarContainer)]
+    for i, bar in zip(range(len(bars)), bars):
+        for patch in bar:
+            patch.set_hatch(hatches[i])
 
     ax1.set_xticks(loc, dataset_labels, rotation=0)
     ax1.set_xlabel("(a) Execution time on 100K range-contains queries")
     ax1.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax1.set_yscale('log')
-    ax1.margins(x=0.01, y=0.35)
+    x0, x1 = ax1.get_xlim()
+    ax1.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
+    ax1.margins(y=0.4)
 
     ax1.legend(loc='upper left', ncol=2, handletextpad=0.3,
-               fontsize=11, borderaxespad=0.2, frameon=False)
+               borderaxespad=0.2, columnspacing=1, frameon=False,
+               )
 
     # Varying sizes
     query_sizes = (50000, 100000, 200000, 400000, 800000,)
@@ -274,17 +307,18 @@ def draw_range_contains_query(prefix, ):
 
     loc = [x for x in range(len(query_sizes))]
     ax2.set_xticks(loc, scale_size(query_sizes), rotation=0)
-    ax2.set_xlabel("(b) Varying Query Size on EuropeParks Dataset")
+    ax2.set_xlabel("(b) Varying query size on EUParks dataset")
     ax2.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax2.set_yscale('log')
-    ax2.margins(x=0.05, y=0.38)
+    ax2.margins(y=0.4)
     ax2.legend(loc='upper left', ncol=2, handletextpad=0.3,
-               fontsize=11, borderaxespad=0.2, frameon=False)
+               borderaxespad=0.2, frameon=False,
+               )
 
-    fig.tight_layout()
+    fig.tight_layout(pad=0.1)
 
     fig.savefig("range_contains_query.pdf", format='pdf', bbox_inches='tight')
-    # plt.show()
+    plt.show()
 
 
 def draw_range_query_intersects(prefix,
@@ -292,7 +326,10 @@ def draw_range_query_intersects(prefix,
                                 index_labels,
                                 ):
     loc = [x for x in range(len(dataset_labels))]
+    plt.rcParams.update({'font.size': 11})
     fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 3.))
+    # fig.subplots_adjust(hspace=0.01)  # Adjust the height space between axes
+    fig.subplots_adjust(wspace=0.6)  # Adjust the width space between axes
 
     fig_names = ("(a)", "(b)", "(c)")
     selectivities = ("0.0001", "0.001", "0.01")
@@ -310,6 +347,20 @@ def draw_range_query_intersects(prefix,
             index_query_time[index_type] = query_time
         index_query_time = pd.DataFrame.from_dict(index_query_time, )
 
+        print("Range Intersects, Selectivity ", selectivity)
+
+        for i in range(len(datasets)):
+            rtree_time = index_query_time.iloc[i][0]
+            glin_time = index_query_time.iloc[i][1]
+            cpu_time = min(rtree_time, glin_time)
+            lbvh_time = index_query_time.iloc[i][2]
+            rtspatial_time = index_query_time.iloc[i][3]
+            print("Dataset", datasets[i])
+            print("Speedup over best CPU", cpu_time / rtspatial_time)
+            print("Speedup over best GPU", lbvh_time / rtspatial_time)
+            print("Speedup over the best", min(cpu_time, lbvh_time) / rtspatial_time)
+            print()
+
         # 1. Choose your desired colormap
         cmap = plt.get_cmap('gist_gray')
 
@@ -318,82 +369,33 @@ def draw_range_query_intersects(prefix,
         slicedCM = slicedCM[::-1]
 
         index_query_time.columns = index_labels
-        bars = index_query_time.plot(kind="bar", width=0.5, ax=ax, color=slicedCM, edgecolor='black', )
+        index_query_time.plot(kind="bar", width=0.8, ax=ax, color=slicedCM, edgecolor='black', )
 
-        all_hatches = []
-        for i in range(len(index_types)):
-            all_hatches += [hatches[i] for _ in range(len(index_query_time))]
-
-        all_hatches.reverse()
-        for i, patch in enumerate(bars.patches):
-            patch.set_hatch(all_hatches[i])
+        bars = [thing for thing in ax.containers if isinstance(thing, matplotlib.container.BarContainer)]
+        for i, bar in zip(range(len(bars)), bars):
+            for patch in bar:
+                patch.set_hatch(hatches[i])
 
         ax.set_xticks(loc, dataset_labels, rotation=0)
         ax.set_xlabel(fig_names[idx] + " " + str(float(selectivity) * 100) + "% Selectivity")
         ax.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
         ax.set_yscale('log')
-        ax.margins(x=0.05, y=0.35)
-
+        ax.margins(x=0.05, y=0.1)
+        x0, x1 = ax.get_xlim()
+        ax.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
         ax.legend(loc='upper left', ncol=2, handletextpad=0.3,
-                  fontsize=11, borderaxespad=0.2, frameon=False)
-    fig.tight_layout()
+                  borderaxespad=0.2, frameon=False)
+    fig.tight_layout(pad=0.1)
 
     fig.savefig('range_intersects_query.pdf', format='pdf', bbox_inches='tight')
-    # plt.show()
-
-
-def draw_build_time(prefix, ):
-    index_types = ("rtree", "glin", "lbvh", "rtspatial")
-    index_labels = ("Boost", "GLIN", "LBVH", "RTSpatial")
-
-    loc = [x for x in range(len(dataset_labels))]
-    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4))
-
-    # Varying datasets
-
-    index_loading_time = {}
-    index_query_time = {}
-    query_size = 100000
-
-    for index_type in index_types:
-        loading_time, query_time = get_running_time(
-            os.path.join(prefix + "/range-contains_queries_" + str(query_size), index_type), datasets)
-        index_loading_time[index_type] = loading_time
-        index_query_time[index_type] = query_time
-    index_query_time = pd.DataFrame.from_dict(index_query_time, )
-    # 1. Choose your desired colormap
-    cmap = plt.get_cmap('gist_gray')
-
-    # 2. Segmenting the whole range (from 0 to 1) of the color map into multiple segments
-    slicedCM = cmap(np.linspace(0, 1, len(index_types)))
-    slicedCM = slicedCM[::-1]
-
-    index_query_time.columns = index_labels
-    bars = index_query_time.plot(kind="bar", width=0.7, ax=ax, color=slicedCM, edgecolor='black', )
-
-    all_hatches = []
-    for i in range(len(index_types)):
-        all_hatches += [hatches[i] for _ in range(len(index_query_time))]
-
-    all_hatches.reverse()
-    for idx, patch in enumerate(bars.patches):
-        patch.set_hatch(all_hatches[idx])
-
-    ax.set_xticks(loc, dataset_labels, rotation=0)
-    ax.set_xlabel("Index Construction Time")
-    ax.set_ylabel(ylabel='Time (ms)', labelpad=1)
-    ax.set_yscale('log')
-    ax.margins(x=0.01, y=0.35)
-
-    ax.legend(loc='upper left', ncol=2, handletextpad=0.3,
-              fontsize=11, borderaxespad=0.2, frameon=False)
-
-    fig.savefig("index_construction.pdf", format='pdf', bbox_inches='tight')
-    # plt.show()
+    plt.show()
 
 
 def draw_vary_rays(prefix):
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(5.5, 7.4))
+    plt.rcParams.update({'font.size': 14})
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 4.5,))
+    fig.subplots_adjust(wspace=-0.12)  # Adjust the width space between axes
+
     ax1 = axes[0]
     ax2 = axes[1]
 
@@ -423,19 +425,20 @@ def draw_vary_rays(prefix):
     for i in range(len(datasets)):
         x = row_ids[i]
         y = dataset_query_time.iloc[row_ids[i]][i]
+        label = ""
         if i == 0:
-            ax1.plot(x, y, 'ro', label="Predication")
-        else:
-            ax1.plot(x, y, 'ro', label="")
+            label = "Predication"
+        ax1.plot(x, y, 'ro', label=label, markersize=12, mfc='none')
 
     ax1.set_xticks(loc, x_labels, rotation=0)
-    ax1.set_xlabel("(a) Number of Duplicated Rays per Query")
+    ax1.set_xlabel("(a) Number of duplicated rays per query")
     ax1.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax1.set_yscale('log')
-    ax1.margins(x=0.05, y=0.5)
+    ax1.margins(x=0.05, y=0.1)
 
     ax1.legend(loc='upper left', ncol=3, handletextpad=0.3,
-               fontsize=11, borderaxespad=0.2, frameon=False)
+               borderaxespad=0.2, columnspacing=0.5, frameon=False,
+               bbox_to_anchor=(-0.08, 1.2))
 
     time_breakdown.plot(kind="bar", stacked=True, ax=ax2, color=slicedCM)
     # bars = [thing for thing in ax2.containers if isinstance(thing, matplotlib.container.BarContainer)]
@@ -447,30 +450,35 @@ def draw_vary_rays(prefix):
 
     loc = [x for x in range(len(dataset_labels))]
     ax2.set_xticks(loc, dataset_labels, rotation=0)
-    ax2.set_xlabel("(b) Running Time Breakdown")
+    ax2.set_xlabel("(b) Running time breakdown")
     ax2.set_ylabel(ylabel='Time Percentage (%)', labelpad=1)
+    bars = [thing for thing in ax2.containers if isinstance(thing, matplotlib.container.BarContainer)]
+    hatches = ['--', '//', 'xx',  '\\\\', '']
+    for i, bar in zip(range(len(bars)), bars):
+        for patch in bar:
+            patch.set_hatch(hatches[i])
     # handletextpad=0.3,
-    # fontsize=11, borderaxespad=0.2, frameon=False,
-    ax2.legend(loc='upper left', ncol=2,
-               bbox_to_anchor=(0.1, 1.2))
-
-    fig.tight_layout()
+    # borderaxespad=0.2, frameon=False,
+    legend = ax2.legend(loc='upper left', ncol=2,
+                        columnspacing=1, frameon=False,
+                        bbox_to_anchor=(-0.05, 1.22))
+    legend.get_frame().set_alpha(0.5)
+    fig.tight_layout(pad=0.1)
 
     fig.savefig("dup_rays.pdf", format='pdf', bbox_inches='tight')
+    plt.show()
 
 
 if __name__ == '__main__':
     dir = os.path.dirname(sys.argv[0]) + "/../query/logs"
 
-    draw_point_query(dir)
+    # draw_point_query(dir)
 
-    draw_range_contains_query(dir)
+    # draw_range_contains_query(dir)
 
     draw_range_query_intersects(os.path.join(dir),
                                 ("rtree", "glin", "lbvh", "rtspatial"),
                                 ("Boost", "GLIN", "LBVH", "RTSpatial"),
                                 )
 
-    draw_build_time(dir)
-
-    draw_vary_rays(dir)
+    # draw_vary_rays(dir)
