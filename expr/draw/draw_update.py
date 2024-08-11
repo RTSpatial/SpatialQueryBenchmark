@@ -15,6 +15,7 @@ def scale_size(size_list, k_scale=1000):
     return tuple(str(int(kb)) + "K" if kb < k_scale else str(int(kb / k_scale)) + "M" for kb in
                  np.asarray(size_list) / k_scale)
 
+
 def get_running_time(prefix, datasets):
     loading_time = []
     query_time = []
@@ -30,7 +31,6 @@ def get_running_time(prefix, datasets):
                     query_time.append(float(m.groups()[0]))
 
     return np.asarray(loading_time), np.asarray(query_time)
-
 
 
 def get_update_time(prefix, op, dataset):
@@ -139,6 +139,7 @@ def draw_build_time(prefix, ):
     fig.savefig("index_construction.pdf", format='pdf', bbox_inches='tight')
     plt.show()
 
+
 def draw_bulk_time(prefix):
     plt.rcParams.update({'font.size': 13})
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(5, 4.5))
@@ -226,6 +227,7 @@ def draw_update_query(prefix):
 
 def draw_all(prefix):
     plt.rcParams.update({'font.size': 12.})
+    plt.rcParams['hatch.linewidth'] = 2
     fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(12.5, 3.7))
     fig.subplots_adjust(wspace=-0.2)  # Adjust the width space between axes
 
@@ -244,8 +246,6 @@ def draw_all(prefix):
     #            ncol=1, handletextpad=0.3,
     #            borderaxespad=0.2, frameon=False)
 
-
-
     index_loading_time = {}
     index_query_time = {}
     index_types = ("rtree", "glin", "lbvh", "rtspatial")
@@ -262,33 +262,28 @@ def draw_all(prefix):
     cmap = plt.get_cmap('gist_gray')
 
     # 2. Segmenting the whole range (from 0 to 1) of the color map into multiple segments
-    slicedCM = cmap(np.linspace(0, 1, len(index_types)))
-    slicedCM = slicedCM[::-1]
+    slicedCM = cmap(np.linspace(0, 1, len(index_types) + 2))
+    slicedCM = list(slicedCM[::-1])
+    del slicedCM[-3:-1]
 
     index_loading_time.columns = index_labels
     loc = [x for x in range(len(dataset_labels))]
-    bars = index_loading_time.plot(kind="bar", width=0.7, ax=ax1, color=slicedCM, edgecolor='black', )
+    index_loading_time.plot(kind="bar", width=0.8, ax=ax1, color=slicedCM, edgecolor='black', )
 
-    all_hatches = []
-    for i in range(len(index_types)):
-        all_hatches += [hatches[i] for _ in range(len(index_loading_time))]
-
-    all_hatches.reverse()
-    for idx, patch in enumerate(bars.patches):
-        patch.set_hatch(all_hatches[idx])
+    bars = [thing for thing in ax1.containers if isinstance(thing, matplotlib.container.BarContainer)]
+    for i, bar in zip(range(len(bars)), bars):
+        for patch in bar:
+            patch.set_hatch(hatches[i])
 
     ax1.set_xticks(loc, dataset_labels, rotation=0)
     ax1.set_xlabel("(a) Index construction time")
     ax1.set_ylabel(ylabel='Time (ms)', labelpad=1)
     ax1.set_yscale('log')
-    x0, x1 = ax1.get_xlim()
-    ax1.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
+    # x0, x1 = ax1.get_xlim()
+    # ax1.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
     ax1.margins(y=0.35)
     ax1.legend(loc='upper left', ncol=2, handletextpad=0.3,
-              borderaxespad=0.2, frameon=False)
-
-
-
+               borderaxespad=0.2, frameon=False)
 
     batch_sizes = ("1000", "10000", "100000", "1000000",)
 
@@ -300,7 +295,7 @@ def draw_all(prefix):
 
     slicedCM = cmap(np.linspace(0, 1, 2))
     slicedCM = slicedCM[::-1]
-    df.plot(kind="bar", ax=ax2, rot=0, color=slicedCM, edgecolor='black', )
+    df.plot(kind="bar", ax=ax2, rot=0, width=0.6, color=slicedCM, edgecolor='black', )
 
     ax2.set_xlabel(xlabel="(b) Batch size")
     ax2.set_ylabel(ylabel='Throughput (M rectangles/sec)', labelpad=1)
@@ -324,7 +319,7 @@ def draw_all(prefix):
 
     slicedCM = cmap(np.linspace(0, 1, 3))
     slicedCM = slicedCM[::-1]
-    df.plot(kind="bar", ax=ax3, rot=0, color=slicedCM, edgecolor='black', )
+    df.plot(kind="bar", ax=ax3, rot=0, width=0.7, color=slicedCM, edgecolor='black', )
 
     ax3.margins(x=0.05, y=0.5)
     ax3.set_xlabel(xlabel="(c) Update ratio")
@@ -332,7 +327,12 @@ def draw_all(prefix):
     ax3.legend(loc='upper left',
                ncol=1, handletextpad=0.3,
                borderaxespad=0.2, frameon=False)
-    fig.tight_layout()
+
+    for ax in axes:
+        x0, x1 = ax.get_xlim()
+        ax.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
+
+    fig.tight_layout(pad=0.)
     fig.savefig('update_all.pdf', format='pdf', bbox_inches='tight')
     plt.show()
 

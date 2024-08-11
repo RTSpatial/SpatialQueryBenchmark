@@ -1,0 +1,42 @@
+/local/storage/liang/.clion/RayJoin/cmake-build-release-dl190/bin/query_exec -poly1 /local/storage/liang/rtspatial/datasets/polygons/USACensusBlockGroupBoundaries.cdb           -poly2 /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/USACensusBlockGroupBoundaries.wkt           -serialize /local/storage/liang/rtspatial/ser           -query pip           -mode rt           -check false
+I0810 15:57:35.881701 2429242 context.h:51] Bounding Box, Bottom-left: (-179.149, 18.9107), Top-right: (-66.9496, 71.3652)
+I0810 15:57:35.881884 2429242 context.h:58] Scaled Bounding Box, Bottom-left: (-69136359329186, -67784245771226), Top-right: (69136359329185, 67784245771225)
+I0810 15:57:35.881887 2429242 context.h:61] Unscaled Bounding Box, Bottom-left: (-179.149, 18.9107), Top-right: (-66.9496, 71.3652)
+E0810 15:57:36.034807 2429242 run_query.cu:429] Point is out of bound: 0
+I0810 15:57:36.126516 2429242 primitive.h:256] Enlarge limit: 5 max iter:5 ne: 28473335 aabbs: 2189691 Compress ratio: 0.923097 Time: 14.709 ms
+I0810 15:57:36.133141 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.133750 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.134347 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.134938 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.135535 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.136124 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.136721 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.137307 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.137889 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.138478 2429242 rt_engine.cu:554] optixLaunch, [w,h,d] = 100000,1,1
+I0810 15:57:36.151170 2429242 run_query.cu:85] Checking point in polygon
+I0810 15:57:36.716527 2429242 run_query.cu:151] Map: 0 passed check
+I0810 15:57:36.718885 2429242 run_query.cu:165] # of points in polygons: 69013
+Timing results:
+ - Read map 0: 182464 ms
+
+ - Load Data: 32.9428 ms
+
+ - Read map 1: 120.311 ms
+
+ - Create App: 76.54 ms
+
+ - Init: 0.109196 ms
+
+ - Adaptive Grouping: 14.7369 ms
+
+ - Build Index: 6.55007 ms
+
+ - Warmup: 3.021 ms
+
+ - Query: 0.588608 ms
+
+ - Check: 583.131 ms
+
+ - Cleanup: 9.61995 ms
+

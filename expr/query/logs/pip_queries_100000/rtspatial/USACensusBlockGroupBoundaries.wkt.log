@@ -1,0 +1,9 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/pip -geom /local/storage/liang/rtspatial/datasets/polygons/USACensusBlockGroupBoundaries.wkt         -query /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/USACensusBlockGroupBoundaries.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type pip         -index_type rtspatial         -load_factor 0.001
+Loaded polygons 248954
+Loaded points 100000
+Loading Time 1.0268 ms
+Geoms 248954
+Queries 100000
+Query Time 10.4188 ms
+Results 69018
+Selectivity: 2.77232e-06

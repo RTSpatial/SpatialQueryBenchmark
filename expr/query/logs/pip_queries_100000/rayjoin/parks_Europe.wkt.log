@@ -1,0 +1,42 @@
+/local/storage/liang/.clion/RayJoin/cmake-build-release-dl190/bin/query_exec -poly1 /local/storage/liang/rtspatial/datasets/polygons/parks_Europe.cdb           -poly2 /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/parks_Europe.wkt           -serialize /local/storage/liang/rtspatial/ser           -query pip           -mode rt           -check false
+I0810 16:09:29.016860 2432139 context.h:51] Bounding Box, Bottom-left: (-31.2515, 35.0264), Top-right: (66, 82.5)
+I0810 16:09:29.017028 2432139 context.h:58] Scaled Bounding Box, Bottom-left: (-68950755954294, -67524044387059), Top-right: (68950755954293, 67524044387058)
+I0810 16:09:29.017031 2432139 context.h:61] Unscaled Bounding Box, Bottom-left: (-31.2515, 35.0264), Top-right: (66, 82.5)
+E0810 16:09:29.229249 2432139 run_query.cu:429] Point is out of bound: 8
+I0810 16:09:29.397192 2432139 primitive.h:256] Enlarge limit: 5 max iter:5 ne: 79609010 aabbs: 7397258 Compress ratio: 0.90708 Time: 41.511 ms
+I0810 16:09:29.416836 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.417644 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.418431 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.419216 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.419994 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.420778 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.421577 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.422369 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.423143 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.423916 2432139 rt_engine.cu:554] optixLaunch, [w,h,d] = 99992,1,1
+I0810 16:09:29.461052 2432139 run_query.cu:85] Checking point in polygon
+I0810 16:09:31.295090 2432139 run_query.cu:151] Map: 0 passed check
+I0810 16:09:31.297751 2432139 run_query.cu:165] # of points in polygons: 51243
+Timing results:
+ - Read map 0: 521773 ms
+
+ - Load Data: 88.7561 ms
+
+ - Read map 1: 123.796 ms
+
+ - Create App: 125.939 ms
+
+ - Init: 0.144005 ms
+
+ - Adaptive Grouping: 41.538 ms
+
+ - Build Index: 19.5651 ms
+
+ - Warmup: 3.98588 ms
+
+ - Query: 0.783205 ms
+
+ - Check: 1876.46 ms
+
+ - Cleanup: 8.56781 ms
+

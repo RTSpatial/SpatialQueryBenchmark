@@ -1,0 +1,9 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/pip -geom /local/storage/liang/rtspatial/datasets/polygons/USADetailedWaterBodies.wkt         -query /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/USADetailedWaterBodies.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type pip         -index_type rtspatial         -load_factor 0.001
+Loaded polygons 463595
+Loaded points 100000
+Loading Time 1.564 ms
+Geoms 463595
+Queries 100000
+Query Time 18.2274 ms
+Results 38110
+Selectivity: 8.22054e-07

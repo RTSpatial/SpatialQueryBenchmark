@@ -30,22 +30,12 @@ rmm.mr.set_current_device_resource(
 
 
 def preprocess_polys(recreate=False):
-    file_path = geom_path + ".boxes.arrow"
+    file_path = geom_path + ".polys.arrow"
     # Create parquet file if it doesn't exist yet
     if recreate or not os.path.exists(file_path):
         # Preprocess and save polys.arrow
         df = read_wkt(geom_path)
         df = df.geometry.explode(ignore_index=True)
-        print("Loaded geometries", len(df))
-        from shapely.geometry import box
-        # Polygon to bounding boxes
-        bounds = df.bounds
-        df = gpd.GeoDataFrame({
-            'geometry': [
-                box(minx, miny, maxx, maxy)
-                for minx, miny, maxx, maxy in zip(bounds['minx'], bounds['miny'], bounds['maxx'], bounds['maxy'])
-            ]
-        })
         coords = cudf.DataFrame(df.geometry.get_coordinates(ignore_index=True)).interleave_columns()
         rings = cudf.Series(df.geometry.apply(lambda p: [len(x.coords) for x in shapely.get_rings(p)]))
         ring_offset = cudf.concat([cudf.Series([0], dtype="int32"), rings.explode().astype("int32")]).cumsum()

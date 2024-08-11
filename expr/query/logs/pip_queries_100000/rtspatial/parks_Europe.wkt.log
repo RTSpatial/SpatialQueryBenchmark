@@ -1,0 +1,9 @@
+/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/pip -geom /local/storage/liang/rtspatial/datasets/polygons/parks_Europe.wkt         -query /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/parks_Europe.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type pip         -index_type rtspatial         -load_factor 0.001
+Loaded polygons 1856318
+Loaded points 100000
+Loading Time 5.214 ms
+Geoms 1856318
+Queries 100000
+Query Time 11.0428 ms
+Results 52010
+Selectivity: 2.80178e-07
