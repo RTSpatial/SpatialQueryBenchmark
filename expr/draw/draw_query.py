@@ -84,9 +84,9 @@ def get_running_time_vary_parallelism(prefix, datasets):
     total_time = predicate_time + forward_time + bvh_time + backward_time
 
     time_breakdown = pd.DataFrame({"Predication": predicate_time / total_time * 100,
-                                   "Forward Pass": forward_time / total_time * 100,
+                                   "Forward Cast": forward_time / total_time * 100,
                                    "BVH Buildup": bvh_time / total_time * 100,
-                                   "Backward Pass": backward_time / total_time * 100})
+                                   "Backward Cast": backward_time / total_time * 100})
 
     return predicated_parallelism, dataset_query_time, time_breakdown
 
@@ -340,14 +340,21 @@ def draw_range_query_intersects(prefix,
                                 index_labels,
                                 ):
     loc = [x for x in range(len(dataset_labels))]
-    plt.rcParams.update({'font.size': 11})
+    plt.rcParams.update({'font.size': 12})
     plt.rcParams['hatch.linewidth'] = 2
-    fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(12, 3.))
+    fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(17, 3.))
     # fig.subplots_adjust(hspace=0.01)  # Adjust the height space between axes
     fig.subplots_adjust(wspace=0.6)  # Adjust the width space between axes
 
     fig_names = ("(a)", "(b)", "(c)")
     selectivities = ("0.0001", "0.001", "0.01")
+    # 1. Choose your desired colormap
+    cmap = plt.get_cmap('gist_gray')
+
+    # 2. Segmenting the whole range (from 0 to 1) of the color map into multiple segments
+    slicedCM = cmap(np.linspace(0, 1, len(index_types) + 2))
+    slicedCM = list(slicedCM[::-1])
+    del slicedCM[-3:-1]
 
     #  "/range-intersects_select_0.0001_queries_100000"
     for idx, selectivity in enumerate(selectivities):
@@ -376,14 +383,6 @@ def draw_range_query_intersects(prefix,
             print("Speedup over the best", min(cpu_time, lbvh_time) / rtspatial_time)
             print()
 
-        # 1. Choose your desired colormap
-        cmap = plt.get_cmap('gist_gray')
-
-        # 2. Segmenting the whole range (from 0 to 1) of the color map into multiple segments
-        slicedCM = cmap(np.linspace(0, 1, len(index_types) + 2))
-        slicedCM = list(slicedCM[::-1])
-        del slicedCM[-3:-1]
-
         index_query_time.columns = index_labels
         index_query_time.plot(kind="bar", width=0.8, ax=ax, color=slicedCM, edgecolor='black', )
 
@@ -401,6 +400,39 @@ def draw_range_query_intersects(prefix,
         ax.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
         ax.legend(loc='upper left', ncol=2, handletextpad=0.3,
                   borderaxespad=0.2, frameon=False)
+
+    # Vary query size
+    selectivity = "0.001"
+    folder_name = "range-intersects_select_{selectivity}_queries_".format(selectivity=selectivity)
+
+    ax3 = axes[3]
+    index_loading_time = {}
+    index_query_time = {}
+    dataset = "parks_Europe.wkt.log"
+    query_sizes = (10000, 20000, 30000, 40000, 50000,)
+    for index_type in index_types:
+        loading_time, query_time = get_running_time_vary_size(os.path.join(prefix, folder_name, ), query_sizes,
+                                                              index_type, dataset)
+        index_loading_time[index_type] = loading_time
+        index_query_time[index_type] = query_time
+        index_query_time = pd.DataFrame.from_dict(index_query_time, )
+    index_query_time.columns = index_labels
+    index_query_time.plot(kind="line",  ax=ax3, color="black" )
+    markers = ['*', "o", '^', '', 's', 'x']
+
+    for i, line in enumerate(axes[3].get_lines()):
+        line.set_marker(markers[i])
+        line.set_color('black')
+
+        loc = [x for x in range(len(query_sizes))]
+    ax3.set_xticks(loc, scale_size(query_sizes), rotation=0)
+    ax3.set_xlabel("(d) Varying query size on EUParks dataset")
+    ax3.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
+    ax3.set_yscale('log')
+    ax3.margins(y=0.4)
+    ax3.legend(loc='upper left', ncol=2, handletextpad=0.3,
+               borderaxespad=0.2, frameon=False,
+               )
     fig.tight_layout(pad=0.1)
 
     fig.savefig('range_intersects_query.pdf', format='pdf', bbox_inches='tight')
@@ -494,11 +526,11 @@ if __name__ == '__main__':
 
     # draw_point_query(dir)
 
-    draw_range_contains_query(dir)
+    # draw_range_contains_query(dir)
 
-    # draw_range_query_intersects(os.path.join(dir),
-    #                             ("rtree", "glin", "lbvh", "rtspatial"),
-    #                             ("Boost", "GLIN", "LBVH", "RTSpatial"),
-    #                             )
+    draw_range_query_intersects(os.path.join(dir),
+                                ("rtree", "glin", "lbvh", "rtspatial"),
+                                ("Boost", "GLIN", "LBVH", "RTSpatial"),
+                                )
 
     # draw_vary_rays(dir)
