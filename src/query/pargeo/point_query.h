@@ -18,9 +18,12 @@ time_stat RunPointQueryParGeo(const std::vector<box_t> &boxes,
   Stopwatch sw;
   time_stat ts;
 
-  parlay::sequence<pargeo_point_t> points(queries.size());
+  std::string s_val = std::to_string(config.parallelism);
+  setenv("PARLAY_NUM_THREADS", s_val.c_str(), 1);
 
   std::cout << "num_workers " << parlay::num_workers() << std::endl;
+
+  parlay::sequence<pargeo_point_t> points(queries.size());
 
   for (size_t i = 0; i < queries.size(); i++) {
     points[i].x[0] = queries[i].x();
@@ -42,7 +45,6 @@ time_stat RunPointQueryParGeo(const std::vector<box_t> &boxes,
     sw.start();
     tree = pargeo::kdTree::build<2, pargeo_point_t>(points, true);
     sw.stop();
-    std::cout << sw.ms() << std::endl;
     ts.insert_ms.push_back(sw.ms());
   }
 
