@@ -1,4 +1,3 @@
-#include "cdb_loader.h"
 #include "query/rtspatial/common.h"
 #include "query/rtspatial/pip_context.h"
 #include "query/rtspatial/pip_query.h"

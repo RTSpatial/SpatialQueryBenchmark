@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "benchmark_configs.h"
-#include "cdb_loader.h"
 #include "query/boost/point_query.h"
 #include "query/boost/range_query.h"
 #include "query/boost/update.h"
