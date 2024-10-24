@@ -54,8 +54,8 @@ time_stat RunPointQueryRTSpatial(const std::vector<box_t> &boxes,
       sw.start();
       switch (config.query_type) {
       case BenchmarkConfig::QueryType::kPointContains: {
-        index.ContainsWhatQuery(d_queries, d_results.data(),
-                                stream.cuda_stream());
+        index.Query(rtspatial::Predicate::kContains, d_queries,
+                    d_results.data(), stream.cuda_stream());
         break;
       }
       default:

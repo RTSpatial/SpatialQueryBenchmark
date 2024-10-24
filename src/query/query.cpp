@@ -2,11 +2,13 @@
 #include <iostream>
 
 #include "benchmark_configs.h"
+#include "cdb_loader.h"
 #include "query/boost/point_query.h"
 #include "query/boost/range_query.h"
 #include "query/boost/update.h"
 #include "query/cgal/point_query.h"
 #include "query/glin/range_query.h"
+#include "query/pargeo/point_query.h"
 
 #ifdef USE_GPU
 #include "query/lbvh/point_query.h"
@@ -48,24 +50,29 @@ int main(int argc, char *argv[]) {
 
   auto conf = BenchmarkConfig::GetConfig();
 
-  auto geoms = LoadBoxes(conf.geom, conf.serialize, conf.limit);
-  std::cout << "Loaded geometries " << geoms.size() << std::endl;
   time_stat ts;
+  auto polygons = LoadPolygons(conf.geom, conf.serialize, conf.limit);
+  std::cout << "Loaded polygons " << polygons.size() << std::endl;
+  auto boxes = PolygonsToBoxes(polygons);
 
   switch (conf.query_type) {
   case BenchmarkConfig::QueryType::kPointContains: {
-    auto queries = LoadPoints(conf.query, conf.limit);
+    auto queries = LoadPoints(conf.query, conf.serialize, conf.limit);
+    std::cout << "Loaded queries " << queries.size() << std::endl;
 
     switch (conf.index_type) {
     case BenchmarkConfig::IndexType::kCGAL:
-      ts = RunPointQueryCGAL(geoms, queries, conf);
+      ts = RunPointQueryCGAL(boxes, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kRTree:
-      ts = RunPointQueryBoost(geoms, queries, conf);
+      ts = RunPointQueryBoost(boxes, queries, conf);
+      break;
+    case BenchmarkConfig::IndexType::kParGeo:
+      ts = RunPointQueryParGeo(boxes, queries, conf);
       break;
 #ifdef USE_GPU
     case BenchmarkConfig::IndexType::kRTSpatial:
-      ts = RunPointQueryRTSpatial(geoms, queries, conf);
+      ts = RunPointQueryRTSpatial(boxes, queries, conf);
       break;
 #endif
     case BenchmarkConfig::IndexType::kGLIN:
@@ -74,7 +81,7 @@ int main(int argc, char *argv[]) {
       break;
 #ifdef USE_GPU
     case BenchmarkConfig::IndexType::kLBVH:
-      ts = RunPointQueryLBVH(geoms, queries, conf);
+      ts = RunPointQueryLBVH(boxes, queries, conf);
       break;
 #endif
     default:
@@ -85,26 +92,28 @@ int main(int argc, char *argv[]) {
   }
   case BenchmarkConfig::QueryType::kRangeContains:
   case BenchmarkConfig::QueryType::kRangeIntersects: {
-    auto queries = LoadBoxes(conf.query, conf.limit);
+    auto queries =
+        PolygonsToBoxes(LoadPolygons(conf.query, conf.serialize, conf.limit));
+    std::cout << "Loaded queries " << queries.size() << std::endl;
 
     switch (conf.index_type) {
     case BenchmarkConfig::IndexType::kRTree:
-      ts = RunRangeQueryBoost(geoms, queries, conf);
+      ts = RunRangeQueryBoost(boxes, queries, conf);
       break;
 #ifdef USE_GPU
     case BenchmarkConfig::IndexType::kRTSpatial:
-      ts = RunRangeQueryRTSpatial(geoms, queries, conf);
+      ts = RunRangeQueryRTSpatial(boxes, queries, conf);
       break;
     case BenchmarkConfig::IndexType::kRTSpatialVaryParallelism:
-      ts = RunRangeQueryRTSpatialVaryParallelism(geoms, queries, conf);
+      ts = RunRangeQueryRTSpatialVaryParallelism(boxes, queries, conf);
       break;
 #endif
     case BenchmarkConfig::IndexType::kGLIN:
-      ts = RunRangeQueryGLIN(geoms, queries, conf);
+      ts = RunRangeQueryGLIN(boxes, queries, conf);
       break;
 #ifdef USE_GPU
     case BenchmarkConfig::IndexType::kLBVH:
-      ts = RunRangeQueryLBVH(geoms, queries, conf);
+      ts = RunRangeQueryLBVH(boxes, queries, conf);
       break;
 #endif
     default:
@@ -116,7 +125,7 @@ int main(int argc, char *argv[]) {
   case BenchmarkConfig::QueryType::kInsertion: {
     switch (conf.index_type) {
     case BenchmarkConfig::IndexType::kRTSpatial:
-      ts = RunInsertionRTSpatial(geoms, conf);
+      ts = RunInsertionRTSpatial(boxes, conf);
       break;
     }
     break;
@@ -124,7 +133,7 @@ int main(int argc, char *argv[]) {
   case BenchmarkConfig::QueryType::kDeletion: {
     switch (conf.index_type) {
     case BenchmarkConfig::IndexType::kRTSpatial:
-      ts = RunDeletionRTSpatial(geoms, conf);
+      ts = RunDeletionRTSpatial(boxes, conf);
       break;
     }
     break;

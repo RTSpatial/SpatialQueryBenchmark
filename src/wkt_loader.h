@@ -1,5 +1,5 @@
-#ifndef SPATIALQUERYBENCHMARK_LOADER_H
-#define SPATIALQUERYBENCHMARK_LOADER_H
+#ifndef SPATIALQUERYBENCHMARK_WKT_LOADER_H
+#define SPATIALQUERYBENCHMARK_WKT_LOADER_H
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -11,16 +11,47 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/register/box.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
+#include <boost/geometry/geometries/ring.hpp>
 #include <boost/serialization/vector.hpp>
 #include <fstream>
 #include <vector>
 
 #include "geom_common.h"
 
-std::vector<box_t> LoadBoxes(const std::string &path,
-                             int limit = std::numeric_limits<int>::max()) {
+std::vector<polygon_t>
+LoadPolygons(const std::string &path,
+             int limit = std::numeric_limits<int>::max()) {
   std::ifstream ifs(path);
   std::string line;
+  std::vector<polygon_t> polygons;
+
+  while (std::getline(ifs, line)) {
+    if (!line.empty()) {
+      if (line.rfind("MULTIPOLYGON", 0) == 0) {
+        boost::geometry::model::multi_polygon<polygon_t> multi_poly;
+        boost::geometry::read_wkt(line, multi_poly);
+
+        for (auto &poly : multi_poly) {
+          polygons.push_back(poly);
+        }
+      } else if (line.rfind("POLYGON", 0) == 0) {
+        polygon_t poly;
+        boost::geometry::read_wkt(line, poly);
+        polygons.push_back(poly);
+      } else {
+        std::cerr << "Bad Geometry " << line << "\n";
+        abort();
+      }
+      if (polygons.size() >= limit) {
+        break;
+      }
+    }
+  }
+  ifs.close();
+  return polygons;
+}
+
+std::vector<box_t> PolygonsToBoxes(const std::vector<polygon_t> &polygons) {
   std::vector<box_t> boxes;
 
   auto ring_points_to_bbox = [&boxes](const std::vector<point_t> &points) {
@@ -41,39 +72,14 @@ std::vector<box_t> LoadBoxes(const std::string &path,
     boxes.push_back(box);
   };
 
-  while (std::getline(ifs, line)) {
-    if (!line.empty()) {
+  for (auto &poly : polygons) {
+    std::vector<point_t> points;
 
-      if (line.rfind("MULTIPOLYGON", 0) == 0) {
-        boost::geometry::model::multi_polygon<polygon_t> multi_poly;
-        boost::geometry::read_wkt(line, multi_poly);
-
-        for (auto &poly : multi_poly) {
-          std::vector<point_t> points;
-          for (auto &p : poly.outer()) {
-            points.push_back(p);
-          }
-          ring_points_to_bbox(points);
-        }
-      } else if (line.rfind("POLYGON", 0) == 0) {
-        polygon_t poly;
-        boost::geometry::read_wkt(line, poly);
-        std::vector<point_t> points;
-
-        for (auto &p : poly.outer()) {
-          points.push_back(p);
-        }
-        ring_points_to_bbox(points);
-      } else {
-        std::cerr << "Bad Geometry " << line << "\n";
-        abort();
-      }
-      if (boxes.size() >= limit) {
-        break;
-      }
+    for (auto &p : poly.outer()) {
+      points.push_back(p);
     }
+    ring_points_to_bbox(points);
   }
-  ifs.close();
   return boxes;
 }
 
@@ -123,28 +129,45 @@ std::vector<point_t> LoadPoints(const std::string &path,
   return points;
 }
 
-void SerializeBoxes(const char *file, const std::vector<box_t> &boxes) {
+void SerializePolygons(const char *file,
+                       const std::vector<polygon_t> &polygons) {
   std::ofstream ofs(file, std::ios::binary);
   boost::archive::binary_oarchive oa(ofs);
-  oa << boost::serialization::make_nvp("boxes", boxes);
+  oa << boost::serialization::make_nvp("polygons", polygons);
   ofs.close();
 }
 
-std::vector<box_t> DeserializeBoxes(const char *file) {
-  std::vector<box_t> deserialized_boxes;
+std::vector<polygon_t> DeserializePolygons(const char *file) {
+  std::vector<polygon_t> deserialized_polygons;
   std::ifstream ifs(file, std::ios::binary);
   boost::archive::binary_iarchive ia(ifs);
-  ia >> boost::serialization::make_nvp("boxes", deserialized_boxes);
+  ia >> boost::serialization::make_nvp("polygons", deserialized_polygons);
   ifs.close();
-  return deserialized_boxes;
+  return deserialized_polygons;
 }
 
-std::vector<box_t> LoadBoxes(const std::string &path,
-                             const std::string &serialize_prefix,
-                             int limit = std::numeric_limits<int>::max()) {
+void SerializePoints(const char *file, const std::vector<point_t> &points) {
+  std::ofstream ofs(file, std::ios::binary);
+  boost::archive::binary_oarchive oa(ofs);
+  oa << boost::serialization::make_nvp("points", points);
+  ofs.close();
+}
+
+std::vector<point_t> DeserializePoints(const char *file) {
+  std::vector<point_t> deserialized_points;
+  std::ifstream ifs(file, std::ios::binary);
+  boost::archive::binary_iarchive ia(ifs);
+  ia >> boost::serialization::make_nvp("points", deserialized_points);
+  ifs.close();
+  return deserialized_points;
+}
+
+std::vector<point_t> LoadPoints(const std::string &path,
+                                const std::string &serialize_prefix,
+                                int limit = std::numeric_limits<int>::max()) {
   std::string escaped_path;
   std::replace_copy(path.begin(), path.end(), std::back_inserter(escaped_path),
-                    '/', '-');
+                    '/', '_');
 
   if (!serialize_prefix.empty()) {
     DIR *dir = opendir(serialize_prefix.c_str());
@@ -160,24 +183,67 @@ std::vector<box_t> LoadBoxes(const std::string &path,
       abort();
     }
   }
-  auto ser_path = serialize_prefix + '/' + escaped_path + "_limit_" +
+  auto ser_path = serialize_prefix + "/points_" + escaped_path + "_limit_" +
                   std::to_string(limit) + ".bin";
 
-  std::vector<box_t> boxes;
+  std::vector<point_t> points;
 
   if (access(ser_path.c_str(), R_OK) == 0) {
-    boxes = DeserializeBoxes(ser_path.c_str());
+    points = DeserializePoints(ser_path.c_str());
   } else {
-    boxes = LoadBoxes(path, limit);
+    points = LoadPoints(path, limit);
     if (!serialize_prefix.empty()) {
-      SerializeBoxes(ser_path.c_str(), boxes);
+      SerializePoints(ser_path.c_str(), points);
     }
   }
-  return boxes;
+  return points;
+}
+
+std::vector<polygon_t>
+LoadPolygons(const std::string &path, const std::string &serialize_prefix,
+             int limit = std::numeric_limits<int>::max()) {
+  std::string escaped_path;
+  std::replace_copy(path.begin(), path.end(), std::back_inserter(escaped_path),
+                    '/', '_');
+
+  if (!serialize_prefix.empty()) {
+    DIR *dir = opendir(serialize_prefix.c_str());
+    if (dir) {
+      closedir(dir);
+    } else if (ENOENT == errno) {
+      if (mkdir(serialize_prefix.c_str(), 0755)) {
+        std::cerr << "Cannot create dir " << path;
+        abort();
+      }
+    } else {
+      std::cerr << "Cannot open dir " << path;
+      abort();
+    }
+  }
+  auto ser_path = serialize_prefix + "/polygon" + escaped_path + "_limit_" +
+                  std::to_string(limit) + ".bin";
+
+  std::vector<polygon_t> polygons;
+
+  if (access(ser_path.c_str(), R_OK) == 0) {
+    polygons = DeserializePolygons(ser_path.c_str());
+  } else {
+    polygons = LoadPolygons(path, limit);
+    if (!serialize_prefix.empty()) {
+      SerializePolygons(ser_path.c_str(), polygons);
+    }
+  }
+  return polygons;
 }
 
 namespace boost {
 namespace serialization {
+template <class Archive>
+void serialize(Archive &ar, polygon_t &poly, const unsigned int version) {
+  ar &boost::serialization::make_nvp("outer", poly.outer());
+  ar &boost::serialization::make_nvp("inners", poly.inners());
+}
+
 template <class Archive>
 void serialize(Archive &ar, box_t &box, const unsigned int version) {
   ar &boost::serialization::make_nvp("min_corner", box.min_corner());
@@ -185,11 +251,24 @@ void serialize(Archive &ar, box_t &box, const unsigned int version) {
 }
 
 template <class Archive>
+void serialize(Archive &ar, boost::geometry::model::ring<point_t> &ring,
+               const unsigned int version) {
+  serialize(ar, static_cast<std::vector<point_t> &>(ring), version);
+}
+
+template <class Archive>
 void serialize(Archive &ar, point_t &p, const unsigned int version) {
   ar &const_cast<coord_t &>(p.x());
   ar &const_cast<coord_t &>(p.y());
 }
+
+template <class Archive>
+void serialize(Archive &ar, line_t &l, const unsigned int version) {
+  serialize(ar, l.first, version);
+  serialize(ar, l.second, version);
+}
+
 } // namespace serialization
 } // namespace boost
 
-#endif // SPATIALQUERYBENCHMARK_LOADER_H
+#endif // SPATIALQUERYBENCHMARK_WKT_LOADER_H

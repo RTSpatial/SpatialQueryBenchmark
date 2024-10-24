@@ -15,13 +15,15 @@ struct BenchmarkConfig {
     kRangeIntersects,
     kBulkLoading,
     kInsertion,
-    kDeletion
+    kDeletion,
+    kPIP,
   };
 
   enum class IndexType {
     kCGAL,
     kGLIN,
     kLBVH,
+    kParGeo,
     kRTree,
     kRTSpatial,
     kRTSpatialVaryParallelism
@@ -89,6 +91,8 @@ struct BenchmarkConfig {
       config.query_type = BenchmarkConfig::QueryType::kInsertion;
     } else if (FLAGS_query_type == "deletion") {
       config.query_type = BenchmarkConfig::QueryType::kDeletion;
+    } else if (FLAGS_query_type == "pip") {
+      config.query_type = BenchmarkConfig::QueryType::kPIP;
     } else {
       std::cerr << "Invalid query " << FLAGS_query << std::endl;
       abort();
@@ -102,6 +106,8 @@ struct BenchmarkConfig {
       config.index_type = IndexType::kRTSpatial;
     } else if (FLAGS_index_type == "rtspatial-vary-parallelism") {
       config.index_type = IndexType::kRTSpatialVaryParallelism;
+    } else if (FLAGS_index_type == "pargeo") {
+      config.index_type = IndexType::kParGeo;
     } else if (FLAGS_index_type == "glin") {
       config.index_type = IndexType::kGLIN;
     } else if (FLAGS_index_type == "lbvh") {

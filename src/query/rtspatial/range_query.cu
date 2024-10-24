@@ -55,15 +55,13 @@ time_stat RunRangeQueryRTSpatial(const std::vector<box_t> &boxes,
       sw.start();
       switch (config.query_type) {
       case BenchmarkConfig::QueryType::kRangeContains: {
-        index.ContainsWhatQuery(d_queries, d_results.data(),
-                                stream.cuda_stream());
+        index.Query(rtspatial::Predicate::kContains, d_queries,
+                    d_results.data(), stream.cuda_stream());
         break;
       }
       case BenchmarkConfig::QueryType::kRangeIntersects: {
-        int best_parallelism =
-            index.CalculateBestParallelism(d_queries, stream.cuda_stream());
-        index.IntersectsWhatQuery(d_queries, d_results.data(),
-                                  stream.cuda_stream(), best_parallelism);
+        index.Query(rtspatial::Predicate::kIntersects, d_queries,
+                    d_results.data(), stream.cuda_stream());
         break;
       }
       default:
@@ -152,8 +150,8 @@ RunRangeQueryRTSpatialVaryParallelism(const std::vector<box_t> &boxes,
   for (int i = 1; i <= config.parallelism; i *= 2) {
     results.Clear(stream.cuda_stream());
     sw.start();
-    index.IntersectsWhatQuery(d_queries, d_results.data(), stream.cuda_stream(),
-                              i);
+    index.IntersectsWhatQueryProfiling(d_queries, d_results.data(),
+                                       stream.cuda_stream(), i);
     ts.num_results = results.size(stream.cuda_stream());
     sw.stop();
     ts.query_ms.push_back(sw.ms());

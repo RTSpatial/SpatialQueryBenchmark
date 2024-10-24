@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "benchmark_configs.h"
-#include "cdb_loader.h"
+#include "wkt_loader.h"
 
 #include "flags.h"
 #include "query/rtspatial/pip_query.h"
@@ -41,18 +41,12 @@ int main(int argc, char *argv[]) {
   time_stat ts;
 
   switch (conf.query_type) {
-  case BenchmarkConfig::QueryType::kLSI: {
-    auto pgraph1 = load_from<double>(conf.geom, conf.serialize);
-    auto pgraph2 = load_from<double>(conf.query, conf.serialize);
-
-    std::cout << "Loaded geometries " << pgraph1->chains.size() << std::endl;
-    std::cout << "Loaded geometries " << pgraph2->chains.size() << std::endl;
-
-    switch (conf.index_type) {
-    case BenchmarkConfig::IndexType::kRTSpatial:
-      ts = RunLSIQueryRTSpatial(pgraph1, pgraph2, conf);
-      break;
-    }
+  case BenchmarkConfig::QueryType::kPIP: {
+    auto polygons = LoadPolygons(conf.geom, conf.serialize, conf.limit);
+    std::cout << "Loaded polygons " << polygons.size() << std::endl;
+    auto points = LoadPoints(conf.query, conf.limit);
+    std::cout << "Loaded points " << points.size() << std::endl;
+    ts = RunPIPQueryRTSpatial(polygons, points, conf);
     break;
   }
   default:

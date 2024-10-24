@@ -1,5 +1,3 @@
+#pragma once
 
-#ifndef SPATIALQUERYBENCHMARK_CONFIG_H
-#define SPATIALQUERYBENCHMARK_CONFIG_H
-
-#endif //SPATIALQUERYBENCHMARK_CONFIG_H
+using coord_t = float;

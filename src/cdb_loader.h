@@ -1,55 +1,53 @@
-#ifndef RAYJOIN_MAP_PLANAR_GRAPH_H
-#define RAYJOIN_MAP_PLANAR_GRAPH_H
+#ifndef SPATIALQUERYBENCHMARK_CBD_LOADER_H
+#define SPATIALQUERYBENCHMARK_CBD_LOADER_H
+#include <cuda_runtime.h>
 #include <dirent.h>
-#include <glog/logging.h>
 #include <sys/stat.h>
 
 #include <algorithm>
 #include <fstream>
-#include <random>
 #include <map>
+#include <random>
 #include <vector>
 
-#include "config.h"
-#include "map/bounding_box.h"
-#include "util/type_traits.h"
-#include "util/util.h"
+#include "geom_common.h"
 
-#define STREAM_WRITE_VAR(stream, var) \
-  stream.write(reinterpret_cast<char*>(&(var)), sizeof(var));
-#define STREAM_READ_VAR(stream, var) \
-  stream.read(reinterpret_cast<char*>(&var), sizeof(var));
-namespace rayjoin {
+#define STREAM_WRITE_VAR(stream, var)                                          \
+  stream.write(reinterpret_cast<const char *>(&(var)), sizeof(var));
+#define STREAM_READ_VAR(stream, var)                                           \
+  stream.read(reinterpret_cast<char *>(&var), sizeof(var));
 
 struct Chain {
-  int64_t id;               // chain index
-  int64_t first_point_idx;  // unused, first, last index of the chain
+  int64_t id;              // chain index
+  int64_t first_point_idx; // unused, first, last index of the chain
   int64_t last_point_idx;
-  int64_t left_polygon_id;   // left polygon id of the chain
-  int64_t right_polygon_id;  // right polygon id of the chain
+  int64_t left_polygon_id;  // left polygon id of the chain
+  int64_t right_polygon_id; // right polygon id of the chain
 };
 
-template <class COORD_T>
-struct PlanarGraph {
-  using point_t = typename cuda_vec<COORD_T>::type_2d;
-  pinned_vector<Chain> chains;
-  pinned_vector<index_t> row_index;  // organized in chains
-  pinned_vector<point_t> points;
-  BoundingBox<COORD_T> bb;
+template <typename COORD_T> struct PlanarGraph {
+  using point_t = boost::geometry::model::d2::point_xy<COORD_T>;
+  std::vector<Chain> chains;
+  std::vector<uint32_t> row_index; // organized in chains
+  std::vector<point_t> points;
+  boost::geometry::model::box<point_t> bb;
 };
 
 template <typename COORD_T>
-inline std::shared_ptr<PlanarGraph<COORD_T>> read_pgraph(const char* path) {
+inline std::shared_ptr<PlanarGraph<COORD_T>> read_pgraph(const char *path) {
   std::ifstream ifs(path);
 
-  CHECK(ifs.is_open()) << "Cannot open file " << path;
+  if (!ifs.is_open()) {
+    std::cerr << "Cannot open file " << path;
+    abort();
+  }
 
   std::string line;
-  Chain* curr_chain;
+  Chain *curr_chain;
   int64_t np = 0;
   auto pgraph = std::make_shared<PlanarGraph<COORD_T>>();
-  auto& g = *pgraph;
-  typename cuda_vec<COORD_T>::type_2d* last_p = nullptr;
+  auto &g = *pgraph;
+  typename PlanarGraph<COORD_T>::point_t *last_p = nullptr;
   std::vector<double> seg_lens;
   size_t lno = 0;
 
@@ -75,34 +73,43 @@ inline std::shared_ptr<PlanarGraph<COORD_T>> read_pgraph(const char* path) {
       pgraph->row_index.push_back(g.points.size());
       last_p = nullptr;
     } else {
-      typename cuda_vec<COORD_T>::type_2d p;
+      COORD_T x, y;
 
-      bad_line = !(iss >> p.x >> p.y);
+      bad_line = !(iss >> x >> y);
+
       if (last_p != nullptr) {
-        auto seg_len = sqrt((p.x - last_p->x) * (p.x - last_p->x) +
-                            (p.y - last_p->y) * (p.y - last_p->y));
+        auto seg_len = sqrt((x - last_p->x()) * (x - last_p->x()) +
+                            (y - last_p->y()) * (y - last_p->y()));
         seg_lens.push_back(seg_len);
-        bad_line |= p.x == last_p->x && p.y == last_p->y;
+        bad_line |= x == last_p->x() && y == last_p->y();
       }
 
-      g.bb.min_x = std::min(g.bb.min_x, p.x);
-      g.bb.max_x = std::max(g.bb.max_x, p.x);
-      g.bb.min_y = std::min(g.bb.min_y, p.y);
-      g.bb.max_y = std::max(g.bb.max_y, p.y);
+      g.bb.min_corner().x(std::min(g.bb.min_corner().x(), x));
+      g.bb.max_corner().x(std::max(g.bb.max_corner().x(), x));
+      g.bb.min_corner().y(std::min(g.bb.min_corner().y(), y));
+      g.bb.max_corner().y(std::max(g.bb.max_corner().y(), y));
+
+      typename PlanarGraph<COORD_T>::point_t p(x, y);
       g.points.push_back(p);
       last_p = &g.points.back();
       np--;
     }
 
-    CHECK(!bad_line) << "Bad line. Check your dataset! " << path << "[" << lno
-                     << "]: " << line;
+    if (bad_line) {
+      std::cerr << "Bad line. Check your dataset! " << path << "[" << lno
+                << "]: " << line;
+      abort();
+    }
   }
   ifs.close();
 
-  if (!g.points.empty()) {  // in case of an empty graph
+  if (!g.points.empty()) { // in case of an empty graph
     pgraph->row_index.push_back(g.points.size());
   }
-  CHECK_EQ(np, 0);
+  if (np != 0) {
+    std::cerr << "Bad file " << path << std::endl;
+    abort();
+  }
 
   double total_seg_len = std::accumulate(seg_lens.begin(), seg_lens.end(), 0.0);
   double mean = total_seg_len / seg_lens.size();
@@ -114,20 +121,20 @@ inline std::shared_ptr<PlanarGraph<COORD_T>> read_pgraph(const char* path) {
       std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
   double stdev = std::sqrt(sq_sum / seg_lens.size());
 
-  VLOG(1) << "Map " << path << " is loaded, chains: " << g.chains.size()
-          << " points: " << pgraph->points.size()
-          << " edges: " << g.points.size() - g.chains.size()
-          << ", min seg len: "
-          << *std::min_element(seg_lens.begin(), seg_lens.end())
-          << ", max seg len: "
-          << *std::max_element(seg_lens.begin(), seg_lens.end())
-          << ", avg seg len: " << mean << ", stdev: " << stdev;
+  std::cout << "Map " << path << " is loaded, chains: " << g.chains.size()
+            << " points: " << pgraph->points.size()
+            << " edges: " << g.points.size() - g.chains.size()
+            << ", min seg len: "
+            << *std::min_element(seg_lens.begin(), seg_lens.end())
+            << ", max seg len: "
+            << *std::max_element(seg_lens.begin(), seg_lens.end())
+            << ", avg seg len: " << mean << ", stdev: " << stdev << std::endl;
   return pgraph;
 }
 
 template <typename COORD_T>
 inline void serialize_pgraph(std::shared_ptr<PlanarGraph<COORD_T>> pgraph,
-                             const char* path) {
+                             const char *path) {
   std::ofstream ofs;
   ofs.open(path, std::ios::out | std::ios::binary);
 
@@ -143,32 +150,32 @@ inline void serialize_pgraph(std::shared_ptr<PlanarGraph<COORD_T>> pgraph,
   STREAM_WRITE_VAR(ofs, n_row_index);
   STREAM_WRITE_VAR(ofs, n_points);
 
-  for (auto& chain : pgraph->chains) {
+  for (auto &chain : pgraph->chains) {
     STREAM_WRITE_VAR(ofs, chain.id);
     STREAM_WRITE_VAR(ofs, chain.first_point_idx);
     STREAM_WRITE_VAR(ofs, chain.last_point_idx);
     STREAM_WRITE_VAR(ofs, chain.left_polygon_id);
     STREAM_WRITE_VAR(ofs, chain.right_polygon_id);
   }
-  for (auto& idx : pgraph->row_index) {
+  for (auto &idx : pgraph->row_index) {
     STREAM_WRITE_VAR(ofs, idx);
   }
-  for (auto& p : pgraph->points) {
-    STREAM_WRITE_VAR(ofs, p.x);
-    STREAM_WRITE_VAR(ofs, p.y);
+  for (auto &p : pgraph->points) {
+    STREAM_WRITE_VAR(ofs, p.x());
+    STREAM_WRITE_VAR(ofs, p.y());
   }
-  STREAM_WRITE_VAR(ofs, pgraph->bb.min_x);
-  STREAM_WRITE_VAR(ofs, pgraph->bb.min_y);
-  STREAM_WRITE_VAR(ofs, pgraph->bb.max_x);
-  STREAM_WRITE_VAR(ofs, pgraph->bb.max_y);
+  STREAM_WRITE_VAR(ofs, pgraph->bb.min_corner().x());
+  STREAM_WRITE_VAR(ofs, pgraph->bb.min_corner().y());
+  STREAM_WRITE_VAR(ofs, pgraph->bb.max_corner().x());
+  STREAM_WRITE_VAR(ofs, pgraph->bb.max_corner().y());
   STREAM_WRITE_VAR(ofs, check_sum);
 
   ofs.close();
 }
 
 template <typename COORD_T>
-inline std::shared_ptr<PlanarGraph<COORD_T>> deserialize_pgraph(
-    const char* path) {
+inline std::shared_ptr<PlanarGraph<COORD_T>>
+deserialize_pgraph(const char *path) {
   std::ifstream ifs;
   ifs.open(path, std::ios::in | std::ios::binary);
   auto pgraph = std::make_shared<PlanarGraph<COORD_T>>();
@@ -181,7 +188,11 @@ inline std::shared_ptr<PlanarGraph<COORD_T>> deserialize_pgraph(
   assert(ifs.good());
 
   STREAM_READ_VAR(ifs, check_sum);
-  CHECK_EQ(check_sum, 0xabcdabcd);
+  if (check_sum != 0xabcdabcd) {
+    std::cerr << "Bad checksum " << path << std::endl;
+    abort();
+  }
+
   STREAM_READ_VAR(ifs, n_chains);
   STREAM_READ_VAR(ifs, n_row_index);
   STREAM_READ_VAR(ifs, n_points);
@@ -189,52 +200,69 @@ inline std::shared_ptr<PlanarGraph<COORD_T>> deserialize_pgraph(
   pgraph->row_index.resize(n_row_index);
   pgraph->points.resize(n_points);
 
-  for (auto& chain : pgraph->chains) {
+  for (auto &chain : pgraph->chains) {
     STREAM_READ_VAR(ifs, chain.id);
     STREAM_READ_VAR(ifs, chain.first_point_idx);
     STREAM_READ_VAR(ifs, chain.last_point_idx);
     STREAM_READ_VAR(ifs, chain.left_polygon_id);
     STREAM_READ_VAR(ifs, chain.right_polygon_id);
   }
-  for (auto& idx : pgraph->row_index) {
+  for (auto &idx : pgraph->row_index) {
     STREAM_READ_VAR(ifs, idx);
   }
-  for (auto& p : pgraph->points) {
-    STREAM_READ_VAR(ifs, p.x);
-    STREAM_READ_VAR(ifs, p.y);
+  for (auto &p : pgraph->points) {
+    COORD_T x, y;
+    STREAM_READ_VAR(ifs, x);
+    STREAM_READ_VAR(ifs, y);
+    p = typename PlanarGraph<COORD_T>::point_t(x, y);
   }
-  STREAM_READ_VAR(ifs, pgraph->bb.min_x);
-  STREAM_READ_VAR(ifs, pgraph->bb.min_y);
-  STREAM_READ_VAR(ifs, pgraph->bb.max_x);
-  STREAM_READ_VAR(ifs, pgraph->bb.max_y);
+
+  COORD_T min_x, min_y, max_x, max_y;
+
+  STREAM_READ_VAR(ifs, min_x);
+  STREAM_READ_VAR(ifs, min_y);
+  STREAM_READ_VAR(ifs, max_x);
+  STREAM_READ_VAR(ifs, max_y);
+
+  pgraph->bb.min_corner().x(min_x);
+  pgraph->bb.min_corner().y(min_y);
+  pgraph->bb.max_corner().x(max_x);
+  pgraph->bb.max_corner().y(max_y);
+
   STREAM_READ_VAR(ifs, check_sum);
-  CHECK_EQ(check_sum, 0xabcdabcd);
+  if (check_sum != 0xabcdabcd) {
+    std::cerr << "Bad checksum " << path << std::endl;
+    abort();
+  }
 
   ifs.close();
 
-  VLOG(1) << "Map " << path
-          << " is deserialized, chains: " << pgraph->chains.size()
-          << " points: " << pgraph->points.size()
-          << " edges: " << pgraph->points.size() - pgraph->chains.size();
+  std::cout << "Map " << path
+            << " is deserialized, chains: " << pgraph->chains.size()
+            << " points: " << pgraph->points.size()
+            << " edges: " << pgraph->points.size() - pgraph->chains.size()
+            << std::endl;
   return pgraph;
 }
 
 template <typename COORD_T>
-std::shared_ptr<PlanarGraph<COORD_T>> load_from(
-    const std::string& path, const std::string& serialize_prefix) {
+std::shared_ptr<PlanarGraph<COORD_T>>
+load_from(const std::string &path, const std::string &serialize_prefix) {
   std::string escaped_path;
   std::replace_copy(path.begin(), path.end(), std::back_inserter(escaped_path),
                     '/', '-');
   if (!serialize_prefix.empty()) {
-    DIR* dir = opendir(serialize_prefix.c_str());
+    DIR *dir = opendir(serialize_prefix.c_str());
     if (dir) {
       closedir(dir);
     } else if (ENOENT == errno) {
       if (mkdir(serialize_prefix.c_str(), 0755)) {
-        LOG(FATAL) << "Cannot create dir " << path;
+        std::cerr << "Cannot create dir " << path << std::endl;
+        abort();
       }
     } else {
-      LOG(FATAL) << "Cannot open dir " << path;
+      std::cerr << "Cannot open dir " << path << std::endl;
+      abort();
     }
   }
 
@@ -246,157 +274,62 @@ std::shared_ptr<PlanarGraph<COORD_T>> load_from(
   auto pgraph = read_pgraph<COORD_T>(path.c_str());
   if (!serialize_prefix.empty() &&
       access(serialize_prefix.c_str(), W_OK) == 0) {
-    serialize_pgraph(pgraph, ser_path.c_str());
+    serialize_pgraph<COORD_T>(pgraph, ser_path.c_str());
   }
   return pgraph;
 }
 
+template <typename COEFFICIENT_T> struct Edge {
+  uint32_t eid;
+  uint32_t p1_idx, p2_idx;
+  COEFFICIENT_T a, b, c; // ax + by + c=0; b >= 0
+};
+
 template <typename COORD_T>
-inline std::shared_ptr<PlanarGraph<COORD_T>> sample_map_from(
-    std::shared_ptr<PlanarGraph<COORD_T>> p_graph, float sample_rate,
-    int seed = 0) {
-  std::random_device rd;
-  std::mt19937 gen(seed == 0 ? rd() : seed);
+void ExtractLineSegs(const std::shared_ptr<PlanarGraph<COORD_T>> &pgraph,
+                     std::vector<COORD_T> &points_x,
+                     std::vector<COORD_T> &points_y,
+                     std::vector<Edge<COORD_T>> &edges) {
+  points_x.resize(pgraph->points.size());
+  points_y.resize(pgraph->points.size());
 
-  auto sampled_graph = std::make_shared<PlanarGraph<COORD_T>>();
-  auto& bb = sampled_graph->bb;
-  std::vector<size_t> pids;
+  for (size_t i = 0; i < pgraph->points.size(); i++) {
+    points_x[i] = pgraph->points[i].x();
+    points_y[i] = pgraph->points[i].y();
+  }
 
-  sampled_graph->chains = p_graph->chains;  // copy chains
+  edges.resize(pgraph->points.size() - pgraph->chains.size());
 
-  for (size_t i_chain = 0; i_chain < p_graph->chains.size(); i_chain++) {
-    auto begin_pid = p_graph->row_index[i_chain];
-    auto end_pid = p_graph->row_index[i_chain + 1];
+  for (size_t ichain = 0; ichain < pgraph->chains.size(); ichain++) {
+    const auto &chain = pgraph->chains[ichain];
 
-    pids.clear();
+    for (auto p_idx = pgraph->row_index[ichain];
+         p_idx < pgraph->row_index[ichain + 1] - 1; p_idx++) {
+      auto eid = p_idx - ichain;
+      auto &e = edges[eid];
 
-    pids.push_back(begin_pid);  // keep first point
-    // only sample if the chain has mid-points
-    if (end_pid - begin_pid > 2) {
-      for (auto pid = begin_pid + 1; pid < end_pid - 1; pid++) {
-        pids.push_back(pid);
+      e.eid = eid;
+      e.p1_idx = p_idx;
+      e.p2_idx = p_idx + 1;
+
+      auto x1 = points_x[e.p1_idx];
+      auto y1 = points_y[e.p1_idx];
+      auto x2 = points_x[e.p2_idx];
+      auto y2 = points_y[e.p2_idx];
+
+      e.a = y1 - y2;
+      e.b = x2 - x1;
+      e.c = x1 * e.a - y1 * e.b;
+
+      assert(e.a != 0 || e.b != 0);
+
+      if (e.b < 0) {
+        e.a = -e.a;
+        e.b = -e.b;
+        e.c = -e.c;
       }
-      std::shuffle(pids.begin() + 1, pids.end(), gen);
-      CHECK_GE(pids.size(), 2);
-
-      // only take first "sample rate" pids
-      pids.resize(std::max(2ul, (size_t) (pids.size() * sample_rate)));
-      // sort pids so the order of coordinates is kept
-      std::sort(pids.begin() + 1, pids.end(),
-                [&](size_t p1_idx, size_t p2_idx) { return p1_idx < p2_idx; });
-    }
-    pids.push_back(end_pid - 1);
-
-    sampled_graph->row_index.push_back(sampled_graph->points.size());
-
-    for (auto pid : pids) {
-      const auto& p = p_graph->points[pid];
-
-      sampled_graph->points.push_back(p);
-
-      bb.min_x = std::min(bb.min_x, p.x);
-      bb.max_x = std::max(bb.max_x, p.x);
-      bb.min_y = std::min(bb.min_y, p.y);
-      bb.max_y = std::max(bb.max_y, p.y);
     }
   }
-
-  if (!sampled_graph->points.empty()) {
-    sampled_graph->row_index.push_back(sampled_graph->points.size());
-  }
-
-  VLOG(1) << "Map is sampled, chains: " << sampled_graph->chains.size()
-          << " points: " << sampled_graph->points.size() << " edges: "
-          << sampled_graph->points.size() - sampled_graph->chains.size();
-  return sampled_graph;
 }
 
-template <typename COORD_T>
-inline std::shared_ptr<PlanarGraph<COORD_T>> sample_edges_from(
-    std::shared_ptr<PlanarGraph<COORD_T>> p_graph, float sample_rate,
-    int seed = 0) {
-  std::vector<std::pair<size_t, size_t>> sampled_edges;
-
-  sampled_edges.reserve(p_graph->points.size());
-
-  for (size_t i_chain = 0; i_chain < p_graph->chains.size(); i_chain++) {
-    for (auto pid = p_graph->row_index[i_chain];
-         pid < p_graph->row_index[i_chain + 1] - 1; pid++) {
-      sampled_edges.emplace_back(i_chain, pid);
-    }
-  }
-
-  std::random_device rd;
-  std::mt19937 gen(seed == 0 ? rd() : seed);
-
-  std::shuffle(sampled_edges.begin(), sampled_edges.end(), gen);
-
-  sampled_edges.resize(sampled_edges.size() * sample_rate);
-
-  std::map<size_t, std::vector<size_t>> chain_edges;
-
-  // collect eids by chain ids
-  for (const auto& e : sampled_edges) {
-    auto i_chain = e.first;
-    auto pid = e.second;
-
-    chain_edges[i_chain].push_back(pid);
-  }
-
-  auto sampled_graph = std::make_shared<PlanarGraph<COORD_T>>();
-  auto& bb = sampled_graph->bb;
-
-  sampled_graph->chains.reserve(chain_edges.size());
-  size_t n_edges = 0;
-  int64_t chain_id = 0;
-
-  for (auto& e : chain_edges) {
-    auto i_chain = e.first;
-    const auto& begin_pids = chain_edges.at(i_chain);
-    Chain chain = p_graph->chains[i_chain];
-
-    chain.id = chain_id++;
-    sampled_graph->chains.push_back(chain);
-
-    n_edges += begin_pids.size();
-
-    std::vector<size_t> pids;
-
-    for (auto p1_idx : begin_pids) {
-      auto p2_idx = p1_idx + 1;
-
-      pids.push_back(p1_idx);
-      pids.push_back(p2_idx);
-    }
-
-    // sort pids so the order of coordinates is kept
-    std::sort(pids.begin(), pids.end(),
-              [&](size_t p1_idx, size_t p2_idx) { return p1_idx < p2_idx; });
-    pids.resize(std::unique(pids.begin(), pids.end()) - pids.begin());
-
-    sampled_graph->row_index.push_back(sampled_graph->points.size());
-
-    for (auto pid : pids) {
-      const auto& p = p_graph->points[pid];
-
-      sampled_graph->points.push_back(p);
-
-      bb.min_x = std::min(bb.min_x, p.x);
-      bb.max_x = std::max(bb.max_x, p.x);
-      bb.min_y = std::min(bb.min_y, p.y);
-      bb.max_y = std::max(bb.max_y, p.y);
-    }
-  }
-
-  if (!sampled_graph->points.empty()) {
-    sampled_graph->row_index.push_back(sampled_graph->points.size());
-  }
-
-  VLOG(1) << "Edges are sampled, chains: " << sampled_graph->chains.size()
-          << " points: " << sampled_graph->points.size()
-          << " edges: " << n_edges;
-  return sampled_graph;
-}
-
-}  // namespace rayjoin
-#endif  // RAYJOIN_MAP_PLANAR_GRAPH_H
+#endif // SPATIALQUERYBENCHMARK_CBD_LOADER_H
