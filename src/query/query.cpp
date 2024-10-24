@@ -123,18 +123,22 @@ int main(int argc, char *argv[]) {
   }
   case BenchmarkConfig::QueryType::kInsertion: {
     switch (conf.index_type) {
+#ifdef USE_GPU
     case BenchmarkConfig::IndexType::kRTSpatial:
       ts = RunInsertionRTSpatial(boxes, conf);
       break;
+#endif
     }
     break;
   }
   case BenchmarkConfig::QueryType::kDeletion: {
     switch (conf.index_type) {
+#ifdef USE_GPU
     case BenchmarkConfig::IndexType::kRTSpatial:
       ts = RunDeletionRTSpatial(boxes, conf);
       break;
     }
+#endif
     break;
   }
   default:
