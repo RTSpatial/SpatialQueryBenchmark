@@ -1,0 +1,3 @@
+add_library(quickHull2dLib INTERFACE)
+
+target_include_directories(quickHull2dLib INTERFACE include)
