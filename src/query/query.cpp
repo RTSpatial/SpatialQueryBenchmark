@@ -137,8 +137,8 @@ int main(int argc, char *argv[]) {
     case BenchmarkConfig::IndexType::kRTSpatial:
       ts = RunDeletionRTSpatial(boxes, conf);
       break;
-    }
 #endif
+    }
     break;
   }
   default:
