@@ -118,8 +118,8 @@ def draw_build_time(prefix):
 
 
 def draw_point_query(prefix, ):
-    index_types = ("rtree", "cgal", "cuspatial", "lbvh", "rtspatial")
-    index_labels = ("Boost", "CGAL", "cuSpatial", "LBVH", "RTSpatial")
+    index_types = ("rtree", "cgal", "pargeo", "cuspatial", "lbvh", "rtspatial")
+    index_labels = ("Boost", "CGAL", "ParGeo", "cuSpatial", "LBVH", "RTSpatial")
 
     plt.rcParams.update({'font.size': 14})
     plt.rcParams['hatch.linewidth'] = 2
@@ -524,13 +524,13 @@ def draw_vary_rays(prefix):
 if __name__ == '__main__':
     dir = os.path.dirname(sys.argv[0]) + "/../query/logs"
 
-    # draw_point_query(dir)
+    draw_point_query(dir)
 
     # draw_range_contains_query(dir)
 
-    draw_range_query_intersects(os.path.join(dir),
-                                ("rtree", "glin", "lbvh", "rtspatial"),
-                                ("Boost", "GLIN", "LBVH", "RTSpatial"),
-                                )
+    # draw_range_query_intersects(os.path.join(dir),
+    #                             ("rtree", "glin", "lbvh", "rtspatial"),
+    #                             ("Boost", "GLIN", "LBVH", "RTSpatial"),
+    #                             )
 
     # draw_vary_rays(dir)

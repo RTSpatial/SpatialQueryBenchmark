@@ -1,0 +1,10 @@
+/home/geng.161/SpatialQueryBenchmark/build/query -geom /home/geng.161/rtspatial/datasets/polygons/dtl_cnty.wkt         -query /home/geng.161/rtspatial/datasets/queries/point-contains_queries_100000/dtl_cnty.wkt         -serialize /home/geng.161/rtspatial/ser         -query_type point-contains         -index_type pargeo         -load_factor 0.001
+Loaded polygons 12234
+Loaded queries 100000
+num_workers 128
+Loading Time 2.4876 ms
+Geoms 12234
+Queries 100000
+Query Time 11.9316 ms
+Results 136475
+Selectivity: 0.000111554

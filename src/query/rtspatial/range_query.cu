@@ -15,6 +15,7 @@ time_stat RunRangeQueryRTSpatial(const std::vector<box_t> &boxes,
   idx_config.ptx_root = std::string(RTSPATIAL_PTX_DIR);
   idx_config.intersect_cost_weight = 0.90;
   idx_config.max_geometries = boxes.size();
+  idx_config.compact = false;
 
   CopyBoxes(boxes, d_boxes);
   CopyBoxes(queries, d_queries);
@@ -25,14 +26,20 @@ time_stat RunRangeQueryRTSpatial(const std::vector<box_t> &boxes,
 
   ts.num_geoms = boxes.size();
   ts.num_queries = queries.size();
+  auto queue_size = std::max(
+      1ul, (size_t)(boxes.size() * queries.size() * config.load_factor));
+
+  std::cout << "Queue size "
+            << queue_size * sizeof(thrust::pair<uint32_t, uint32_t>) / 1024 /
+                   1024
+            << " MB" << std::endl;
 
   rtspatial::Queue<thrust::pair<uint32_t, uint32_t>> results;
   rtspatial::SharedValue<
       rtspatial::Queue<thrust::pair<uint32_t, uint32_t>>::device_t>
       d_results;
 
-  results.Init(std::max(
-      1ul, (size_t)(boxes.size() * queries.size() * config.load_factor)));
+  results.Init(queue_size);
   d_results.set(stream.cuda_stream(), results.DeviceObject());
 
   for (int i = 0; i < config.warmup + config.repeat; i++) {
@@ -46,6 +53,8 @@ time_stat RunRangeQueryRTSpatial(const std::vector<box_t> &boxes,
     sw.stop();
     ts.insert_ms.push_back(sw.ms());
   }
+
+  index.PrintMemoryUsage();
 
   auto updates = GenerateUpdates(boxes, config.update_ratio);
 

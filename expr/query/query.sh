@@ -55,7 +55,7 @@ function run_point_query_contains_vary_size() {
   index_type="$1"
   wkt_file="parks_Europe.wkt"
 
-  for query_size in "${QUERY_VARY_SIZES[@]}"; do
+  for query_size in "${QUERY_VARY_SIZES_CONTAINS[@]}"; do
     query_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
     query="${query_dir}/${wkt_file}"
     log="${log_dir}/${query_type}_queries_${query_size}/${index_type}/${wkt_file}.log"
@@ -118,7 +118,7 @@ function run_range_query_contains_vary_size() {
   index_type="$1"
   wkt_file="parks_Europe.wkt"
 
-  for query_size in "${QUERY_VARY_SIZES[@]}"; do
+  for query_size in "${QUERY_VARY_SIZES_CONTAINS[@]}"; do
     query_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
     query="${query_dir}/${wkt_file}"
     log="${log_dir}/${query_type}_queries_${query_size}/${index_type}/${wkt_file}.log"
@@ -265,4 +265,4 @@ for index_type in "lbvh" "rtspatial"; do
   run_range_query_contains_vary_size "$index_type"
 done
 
-vary_parallelism_range_query_intersects
+#vary_parallelism_range_query_intersects

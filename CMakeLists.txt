@@ -54,7 +54,6 @@ endif ()
 add_subdirectory(thirdparty/GLIN)
 include_directories(thirdparty/GLIN)
 include_directories(thirdparty/GLIN/src/core)
-#include_directories(thirdparty/ParGeo)
 include_directories(${GEOS_INCLUDE_DIR})
 add_subdirectory(thirdparty/ParGeo)
 
@@ -69,7 +68,7 @@ message("Boost_LIBRARY_DIRS: ${Boost_LIBRARY_DIRS}")
 
 include_directories(src)
 add_executable(gen src/gen/gen.cpp src/flags.cpp)
-target_link_libraries(gen ${GFLAGS_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(gen ${GFLAGS_LIBRARIES} ${Boost_LIBRARIES} pthread)
 
 add_library(glin thirdparty/GLIN/glin/hilbert/hilbert.cpp)
 

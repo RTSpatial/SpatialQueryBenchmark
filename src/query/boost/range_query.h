@@ -42,7 +42,6 @@ time_stat RunRangeQueryBoost(const std::vector<box_t> &boxes,
           [&](int tid) {
             auto begin = std::min(tid * avg_queries, ts.num_queries);
             auto end = std::min(begin + avg_queries, ts.num_queries);
-            size_t num_results = 0;
             std::vector<box_t> local_results;
 
             for (auto i = begin; i < end; i++) {

@@ -35,20 +35,21 @@ function gen_point_query_contains() {
 
 function gen_point_query_contains_vary_size() {
   query_type="point-contains"
-  wkt_file="parks_Europe.wkt"
-  for query_size in "${QUERY_VARY_SIZES_CONTAINS[@]}"; do
-    output_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
-    output="${output_dir}/${wkt_file}"
+  for wkt_file in "parks_Europe.wkt" "lakes.bz2.wkt" "parks.bz2.wkt"; do
+    for query_size in "${QUERY_VARY_SIZES_CONTAINS[@]}"; do
+      output_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
+      output="${output_dir}/${wkt_file}"
 
-    if [[ ! -f "$output" ]]; then
-      mkdir -p "$output_dir"
-      echo "Generating $output, size $query_size"
-      "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
-        -serialize "$SERIALIZE_ROOT" \
-        -output "$output" \
-        -num_queries $query_size \
-        -query_type "$query_type"
-    fi
+      if [[ ! -f "$output" ]]; then
+        mkdir -p "$output_dir"
+        echo "Generating $output, size $query_size"
+        "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
+          -serialize "$SERIALIZE_ROOT" \
+          -output "$output" \
+          -num_queries $query_size \
+          -query_type "$query_type"
+      fi
+    done
   done
 }
 
@@ -72,20 +73,22 @@ function gen_range_query_contains() {
 
 function gen_range_query_contains_vary_size() {
   query_type="range-contains"
-  wkt_file="parks_Europe.wkt"
-  for query_size in "${QUERY_VARY_SIZES_CONTAINS[@]}"; do
-    output_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
-    output="${output_dir}/${wkt_file}"
+  #  wkt_file="parks_Europe.wkt"
+  for wkt_file in "parks_Europe.wkt" "lakes.bz2.wkt" "parks.bz2.wkt"; do
+    for query_size in "${QUERY_VARY_SIZES_CONTAINS[@]}"; do
+      output_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
+      output="${output_dir}/${wkt_file}"
 
-    if [[ ! -f "$output" ]]; then
-      mkdir -p "$output_dir"
-      echo "Generating $output"
-      "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
-        -serialize "$SERIALIZE_ROOT" \
-        -output "$output" \
-        -num_queries $query_size \
-        -query_type "$query_type"
-    fi
+      if [[ ! -f "$output" ]]; then
+        mkdir -p "$output_dir"
+        echo "Generating $output"
+        "$BENCHMARK_ROOT"/gen -input "${DATASET_ROOT}/polygons/${wkt_file}" \
+          -serialize "$SERIALIZE_ROOT" \
+          -output "$output" \
+          -num_queries $query_size \
+          -query_type "$query_type"
+      fi
+    done
   done
 }
 
@@ -133,7 +136,6 @@ function gen_range_query_intersects_vary_size() {
   done
 }
 
-
 gen_point_query_contains
 gen_point_query_contains_vary_size
 
@@ -141,5 +143,6 @@ gen_range_query_contains
 gen_range_query_contains_vary_size
 
 gen_range_query_intersects $INTERSECTS_QUERY_SIZE
-gen_range_query_intersects $RAY_DUP_INTERSECTS_QUERY_SIZE
+#gen_range_query_intersects $RAY_DUP_INTERSECTS_QUERY_SIZE
 gen_range_query_intersects_vary_size "0.001"
+

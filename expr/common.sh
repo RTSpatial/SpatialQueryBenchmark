@@ -8,7 +8,8 @@ export RAYJOIN_ROOT="/local/storage/liang/.clion/RayJoin/cmake-build-release-dl1
 export DATASET_WKT_FILES=("dtl_cnty.wkt"
   "USACensusBlockGroupBoundaries.wkt"
   "USADetailedWaterBodies.wkt"
-  "parks_Europe.wkt")
+  "parks_Europe.wkt"
+  "parks.bz2.wkt")
 export DATASET_CDB_FILES=("dtl_cnty.cdb"
   "USACensusBlockGroupBoundaries.cdb"
   "USADetailedWaterBodies.cdb"

@@ -1,11 +1,26 @@
 #ifndef SPATIALQUERYBENCHMARK_GENERATOR_H
 #define SPATIALQUERYBENCHMARK_GENERATOR_H
-#include <random>
-
 #include <boost/geometry/index/rtree.hpp>
 #include <boost/iterator/function_output_iterator.hpp>
+#include <random>
+#include <thread>
 
 #include "geom_common.h"
+
+box_t get_bounds(const std::vector<box_t> &data) {
+  auto min_x = std::numeric_limits<coord_t>::max();
+  auto min_y = std::numeric_limits<coord_t>::max();
+  auto max_x = std::numeric_limits<coord_t>::lowest();
+  auto max_y = std::numeric_limits<coord_t>::lowest();
+
+  for (auto &b : data) {
+    min_x = std::min(min_x, b.min_corner().x());
+    min_y = std::min(min_y, b.min_corner().y());
+    max_x = std::max(max_x, b.max_corner().x());
+    max_y = std::max(max_y, b.max_corner().y());
+  }
+  return box_t(point_t(min_x, min_y), point_t(max_x, max_y));
+}
 
 /**
  * Generate the queries that there are at least num_qualified input rectangles
@@ -116,38 +131,89 @@ std::vector<box_t> GenerateContainsQueries(const std::vector<box_t> &data,
 std::vector<box_t> GenerateIntersectsQueries(const std::vector<box_t> &data,
                                              size_t min_qualified,
                                              size_t num_queries, int seed = 0) {
-  boost::geometry::index::rtree<box_t, boost::geometry::index::rstar<16>,
+  boost::geometry::index::rtree<box_t,
+                                boost::geometry::index::linear<BOOST_LEAF_SIZE>,
                                 boost::geometry::index::indexable<box_t>>
       rtree(data);
-  auto min_point = rtree.bounds().min_corner();
-  auto max_point = rtree.bounds().max_corner();
+  auto bounds = get_bounds(data);
+
+  printf("range x [%f, %f], y [%f, %f]\n", bounds.min_corner().x(),
+         bounds.max_corner().x(), bounds.min_corner().y(),
+         bounds.max_corner().y());
+
   std::mt19937 mt(seed);
-  std::uniform_real_distribution<coord_t> dist_x(min_point.get<0>(),
-                                                 max_point.get<0>());
-  std::uniform_real_distribution<coord_t> dist_y(min_point.get<1>(),
-                                                 max_point.get<1>());
   std::vector<box_t> queries;
+  std::atomic_uint64_t total_intersects = 0;
 
-  for (size_t i = 0; i < num_queries; i++) {
-    auto x = dist_x(mt);
-    auto y = dist_y(mt);
-    point_t p(x, y);
-    auto min_x = x;
-    auto min_y = y;
-    auto max_x = x;
-    auto max_y = y;
+  auto n_threads = std::thread::hardware_concurrency();
+  auto avg_queries = (num_queries + n_threads - 1) / n_threads;
+  std::vector<std::thread> threads;
+  std::mutex mu;
 
-    rtree.query(boost::geometry::index::nearest(p, min_qualified),
-                boost::make_function_output_iterator([&](const box_t &b) {
-                  min_x = std::min(min_x, b.min_corner().x());
-                  min_y = std::min(min_y, b.min_corner().y());
-                  max_x = std::max(max_x, b.max_corner().x());
-                  max_y = std::max(max_y, b.max_corner().y());
-                }));
+  for (uint32_t tid = 0; tid < n_threads; tid++) {
+    threads.emplace_back(
+        [&](int tid) {
+          std::uniform_real_distribution<coord_t> dist_x(
+              bounds.min_corner().x(), bounds.max_corner().x());
+          std::uniform_real_distribution<coord_t> dist_y(
+              bounds.min_corner().y(), bounds.max_corner().y());
+          auto begin = std::min(tid * avg_queries, num_queries);
+          auto end = std::min(begin + avg_queries, num_queries);
+          std::vector<box_t> local_queries;
 
-    box_t query(point_t(min_x, min_y), point_t(max_x, max_y));
-    queries.push_back(query);
+          for (auto i = begin; i < end; i++) {
+          retry:
+            auto x = dist_x(mt);
+            auto y = dist_y(mt);
+            point_t p(x, y);
+            auto min_x = x;
+            auto min_y = y;
+            auto max_x = x;
+            auto max_y = y;
+
+            std::vector<box_t> results;
+
+            rtree.query(boost::geometry::index::nearest(p, min_qualified),
+                        std::back_inserter(results));
+            box_t query;
+
+            for (const box_t &nbr_box : results) {
+              min_x = std::min(min_x, nbr_box.min_corner().x());
+              min_y = std::min(min_y, nbr_box.min_corner().y());
+              max_x = std::max(max_x, nbr_box.max_corner().x());
+              max_y = std::max(max_y, nbr_box.max_corner().y());
+              query = box_t(point_t(min_x, min_y), point_t(max_x, max_y));
+              uint32_t n_intersects = 0;
+
+              rtree.query(boost::geometry::index::intersects(query),
+                          boost::make_function_output_iterator(
+                              [&](const box_t &b) { n_intersects++; }));
+              if (n_intersects >= min_qualified) {
+                // too many intersections
+                if ((float)n_intersects / min_qualified > 1.1) {
+                  goto retry;
+                }
+                total_intersects += n_intersects;
+                break;
+              }
+            }
+
+            local_queries.push_back(query);
+          }
+
+          std::unique_lock<std::mutex> lock(mu);
+          queries.insert(queries.end(), local_queries.begin(),
+                         local_queries.end());
+        },
+        tid);
   }
+  for (auto &thread : threads) {
+    thread.join();
+  }
+
+  std::cout << "Real selectivity "
+            << (float)total_intersects / (data.size() * num_queries)
+            << std::endl;
 
   return queries;
 }
@@ -192,18 +258,18 @@ std::vector<box_t> GenerateUniformQueries(const std::vector<box_t> &data,
 
     box_t query(point_t(min_x, min_y), point_t(max_x, max_y));
 
-//    size_t result_size = 0;
-//
-//    rtree.query(boost::geometry::index::intersects(query),
-//                boost::make_function_output_iterator(
-//                    [&](const box_t &b) { result_size++; }));
+    //    size_t result_size = 0;
+    //
+    //    rtree.query(boost::geometry::index::intersects(query),
+    //                boost::make_function_output_iterator(
+    //                    [&](const box_t &b) { result_size++; }));
 
-//    if(result_size > 1000) {
-//      std::cout << "intersects " << result_size << std::endl;
-//    }
+    //    if(result_size > 1000) {
+    //      std::cout << "intersects " << result_size << std::endl;
+    //    }
 
-//    std::cout << "Result frac " << (float)result_size / data.size()
-//              << std::endl;
+    //    std::cout << "Result frac " << (float)result_size / data.size()
+    //              << std::endl;
 
     queries.push_back(query);
   }

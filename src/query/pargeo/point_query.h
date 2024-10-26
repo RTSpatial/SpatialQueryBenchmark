@@ -56,13 +56,11 @@ time_stat RunPointQueryParGeo(const std::vector<box_t> &boxes,
     sw.start();
     ts.num_results = 0;
     results.clear();
-
     for (int tid = 0; tid < config.parallelism; tid++) {
       threads.emplace_back(
           [&](int tid) {
             auto begin = std::min(tid * avg_queries, boxes.size());
             auto end = std::min(begin + avg_queries, boxes.size());
-            size_t num_results = 0;
             std::vector<pargeo_point_t *> local_results;
 
             for (auto i = begin; i < end; i++) {
