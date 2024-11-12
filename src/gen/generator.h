@@ -189,8 +189,9 @@ std::vector<box_t> GenerateIntersectsQueries(const std::vector<box_t> &data,
                           boost::make_function_output_iterator(
                               [&](const box_t &b) { n_intersects++; }));
               if (n_intersects >= min_qualified) {
-                // too many intersections
-                if ((float)n_intersects / min_qualified > 1.1) {
+                // too many intersections, retry to generate another query
+                if (min_qualified > 1 &&
+                    (float)n_intersects / min_qualified > 10) {
                   goto retry;
                 }
                 total_intersects += n_intersects;
