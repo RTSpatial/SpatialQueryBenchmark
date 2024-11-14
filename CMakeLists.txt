@@ -98,8 +98,7 @@ if (USE_GPU)
             ${GPU_SOURCES}
             src/flags.cpp
             ${PROGRAM_MODULES_PIP})
-    target_link_libraries(query cuda)
-    target_link_libraries(pip pthread ${GFLAGS_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(pip cuda pthread ${GFLAGS_LIBRARIES} ${Boost_LIBRARIES})
     target_compile_definitions(pip PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/ptx_pip\")
     target_compile_options(pip PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
     set_target_properties(pip PROPERTIES CUDA_ARCHITECTURES "${ENABLED_ARCHS}")
