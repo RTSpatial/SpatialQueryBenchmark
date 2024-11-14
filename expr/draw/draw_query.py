@@ -10,8 +10,8 @@ import re
 import pandas as pd
 
 
-def scale_size(size_list, k_scale=1000):
-    return tuple(str(int(kb)) + "K" if kb < k_scale else str(int(kb / k_scale)) + "M" for kb in
+def scale_size(size_list, k_scale=1000.0):
+    return tuple(str(int(kb)) + "K" if kb < k_scale else str(kb / k_scale) + "M" for kb in
                  np.asarray(size_list) / k_scale)
 
 
@@ -120,12 +120,14 @@ def draw_build_time(prefix):
 def draw_point_query(prefix, ):
     index_types = ("rtree", "cgal", "pargeo", "cuspatial", "lbvh", "rtspatial")
     index_labels = ("Boost", "CGAL", "ParGeo", "cuSpatial", "LBVH", "RTSpatial")
+    index_types = ("rtree", "cgal", "pargeo", "lbvh", "rtspatial")
+    index_labels = ("Boost", "CGAL", "ParGeo", "LBVH", "RTSpatial")
 
-    plt.rcParams.update({'font.size': 14})
+    plt.rcParams.update({'font.size': 12})
     plt.rcParams['hatch.linewidth'] = 2
     loc = [x for x in range(len(dataset_labels))]
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(11, 3.6))
-    fig.subplots_adjust(wspace=0.05)  # Adjust the width space between axes
+    fig.subplots_adjust(wspace=0.1)  # Adjust the width space between axes
 
     ax1 = axes[0]
     ax2 = axes[1]
@@ -145,19 +147,19 @@ def draw_point_query(prefix, ):
 
     print("Point Contains Summaries")
 
-    for i in range(len(datasets)):
-        rtree_time = index_query_time.iloc[i]['rtree']
-        cgal_time = index_query_time.iloc[i]['cgal']
-        cpu_time = min(rtree_time, cgal_time)
-
-        cuspatial_time = index_query_time.iloc[i]['cuspatial']
-        lbvh_time = index_query_time.iloc[i]['lbvh']
-        gpu_time = min(cuspatial_time, lbvh_time)
-        rtspatial_time = index_query_time.iloc[i]['rtspatial']
-        print("Dataset", datasets[i])
-        print("Speedup over best CPU", cpu_time / rtspatial_time)
-        print("Speedup over best GPU", gpu_time / rtspatial_time)
-        print()
+    # for i in range(len(datasets)):
+    #     rtree_time = index_query_time.iloc[i]['rtree']
+    #     cgal_time = index_query_time.iloc[i]['cgal']
+    #     cpu_time = min(rtree_time, cgal_time)
+    #
+    #     cuspatial_time = index_query_time.iloc[i]['cuspatial']
+    #     lbvh_time = index_query_time.iloc[i]['lbvh']
+    #     gpu_time = min(cuspatial_time, lbvh_time)
+    #     rtspatial_time = index_query_time.iloc[i]['rtspatial']
+    #     print("Dataset", datasets[i])
+    #     print("Speedup over best CPU", cpu_time / rtspatial_time)
+    #     print("Speedup over best GPU", gpu_time / rtspatial_time)
+    #     print()
 
     # 1. Choose your desired colormap
     cmap = plt.get_cmap('gist_gray')
@@ -195,11 +197,12 @@ def draw_point_query(prefix, ):
                markerscale=4)
 
     # Varying sizes
-    query_sizes = (50000, 100000, 200000, 400000, 800000,)
+    query_sizes = (50000, 100000, 200000, 400000, 800000, 1600000, 3200000, 6400000, 12800000)
 
     index_loading_time = {}
     index_query_time = {}
-    dataset = "parks_Europe.wkt.log"
+    # dataset = "parks_Europe.wkt.log"
+    dataset = "parks.bz2.wkt.log"
 
     for index_type in index_types:
         loading_time, query_time = get_running_time_vary_size(prefix + "/point-contains_queries_",
@@ -216,7 +219,7 @@ def draw_point_query(prefix, ):
 
     loc = [x for x in range(len(query_sizes))]
     ax2.set_xticks(loc, scale_size(query_sizes), rotation=0)
-    ax2.set_xlabel("(b) Varying query size on EUParks dataset")
+    ax2.set_xlabel("(b) Varying query size on OSMParks dataset")
     ax2.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax2.set_yscale('log')
     ax2.margins(y=0.6)
@@ -224,17 +227,17 @@ def draw_point_query(prefix, ):
                borderaxespad=0.2, columnspacing=1, frameon=False,
                )
 
-    fig.tight_layout(pad=0.)
+    fig.tight_layout(pad=0.2)
 
     fig.savefig("point_query.pdf", format='pdf', bbox_inches='tight')
     plt.show()
 
 
 def draw_range_contains_query(prefix, ):
-    index_types = ("rtree", "glin", "lbvh", "rtspatial")
-    index_labels = ("Boost", "GLIN", "LBVH", "RTSpatial")
+    index_types = ("rtree", "lbvh", "rtspatial")
+    index_labels = ("Boost", "LBVH", "RTSpatial")
 
-    plt.rcParams.update({'font.size': 14})
+    plt.rcParams.update({'font.size': 10})
     plt.rcParams['hatch.linewidth'] = 2
     loc = [x for x in range(len(dataset_labels))]
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10.5, 3.6))
@@ -258,16 +261,16 @@ def draw_range_contains_query(prefix, ):
 
     print("Range Contains Summaries")
 
-    for i in range(len(datasets)):
-        rtree_time = index_query_time.iloc[i][0]
-        glin_time = index_query_time.iloc[i][1]
-        cpu_time = min(rtree_time, glin_time)
-        lbvh_time = index_query_time.iloc[i][2]
-        rtspatial_time = index_query_time.iloc[i][3]
-        print("Dataset", datasets[i])
-        print("Speedup over best CPU", cpu_time / rtspatial_time)
-        print("Speedup over best GPU", lbvh_time / rtspatial_time)
-        print()
+    # for i in range(len(datasets)):
+    #     rtree_time = index_query_time.iloc[i][0]
+    #     glin_time = index_query_time.iloc[i][1]
+    #     cpu_time = min(rtree_time, glin_time)
+    #     lbvh_time = index_query_time.iloc[i][2]
+    #     rtspatial_time = index_query_time.iloc[i][3]
+    #     print("Dataset", datasets[i])
+    #     print("Speedup over best CPU", cpu_time / rtspatial_time)
+    #     print("Speedup over best GPU", lbvh_time / rtspatial_time)
+    #     print()
 
     # 1. Choose your desired colormap
     cmap = plt.get_cmap('gist_gray')
@@ -293,16 +296,16 @@ def draw_range_contains_query(prefix, ):
     ax1.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
     ax1.margins(y=0.4)
 
-    ax1.legend(loc='upper left', ncol=2, handletextpad=0.3,
+    ax1.legend(loc='upper left', ncol=3, handletextpad=0.3,
                borderaxespad=0.2, columnspacing=1, frameon=False,
                )
 
     # Varying sizes
-    query_sizes = (50000, 100000, 200000, 400000, 800000,)
+    query_sizes = (50000, 100000, 200000, 400000, 800000, 1600000, 3200000, 6400000, 12800000)
 
     index_loading_time = {}
     index_query_time = {}
-    dataset = "parks_Europe.wkt.log"
+    dataset = "parks.bz2.wkt.log"
 
     for index_type in index_types:
         loading_time, query_time = get_running_time_vary_size(prefix + "/range-contains_queries_",
@@ -321,11 +324,11 @@ def draw_range_contains_query(prefix, ):
 
     loc = [x for x in range(len(query_sizes))]
     ax2.set_xticks(loc, scale_size(query_sizes), rotation=0)
-    ax2.set_xlabel("(b) Varying query size on EUParks dataset")
+    ax2.set_xlabel("(b) Varying query size on OSMParks dataset")
     ax2.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax2.set_yscale('log')
     ax2.margins(y=0.4)
-    ax2.legend(loc='upper left', ncol=2, handletextpad=0.3,
+    ax2.legend(loc='upper left', ncol=3, handletextpad=0.3,
                borderaxespad=0.2, frameon=False,
                )
 
@@ -340,11 +343,11 @@ def draw_range_query_intersects(prefix,
                                 index_labels,
                                 ):
     loc = [x for x in range(len(dataset_labels))]
-    plt.rcParams.update({'font.size': 12})
+    plt.rcParams.update({'font.size': 10})
     plt.rcParams['hatch.linewidth'] = 2
-    fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(17, 3.))
+    fig, axes = plt.subplots(nrows=1, ncols=4, figsize=(18, 3.))
     # fig.subplots_adjust(hspace=0.01)  # Adjust the height space between axes
-    fig.subplots_adjust(wspace=0.6)  # Adjust the width space between axes
+    fig.subplots_adjust(wspace=0.2)  # Adjust the width space between axes
 
     fig_names = ("(a)", "(b)", "(c)")
     selectivities = ("0.0001", "0.001", "0.01")
@@ -371,17 +374,17 @@ def draw_range_query_intersects(prefix,
 
         print("Range Intersects, Selectivity ", selectivity)
 
-        for i in range(len(datasets)):
-            rtree_time = index_query_time.iloc[i][0]
-            glin_time = index_query_time.iloc[i][1]
-            cpu_time = min(rtree_time, glin_time)
-            lbvh_time = index_query_time.iloc[i][2]
-            rtspatial_time = index_query_time.iloc[i][3]
-            print("Dataset", datasets[i])
-            print("Speedup over best CPU", cpu_time / rtspatial_time)
-            print("Speedup over best GPU", lbvh_time / rtspatial_time)
-            print("Speedup over the best", min(cpu_time, lbvh_time) / rtspatial_time)
-            print()
+        # for i in range(len(datasets)):
+        #     rtree_time = index_query_time.iloc[i][0]
+        #     glin_time = index_query_time.iloc[i][1]
+        #     cpu_time = min(rtree_time, glin_time)
+        #     lbvh_time = index_query_time.iloc[i][2]
+        #     rtspatial_time = index_query_time.iloc[i][3]
+        #     print("Dataset", datasets[i])
+        #     print("Speedup over best CPU", cpu_time / rtspatial_time)
+        #     print("Speedup over best GPU", lbvh_time / rtspatial_time)
+        #     print("Speedup over the best", min(cpu_time, lbvh_time) / rtspatial_time)
+        #     print()
 
         index_query_time.columns = index_labels
         index_query_time.plot(kind="bar", width=0.8, ax=ax, color=slicedCM, edgecolor='black', )
@@ -395,10 +398,10 @@ def draw_range_query_intersects(prefix,
         ax.set_xlabel(fig_names[idx] + " " + str(float(selectivity) * 100) + "% Selectivity")
         ax.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
         ax.set_yscale('log')
-        ax.margins(x=0.05, y=0.1)
+        ax.margins(x=0.05, y=0.3)
         x0, x1 = ax.get_xlim()
         ax.set_xlim(x0 + 0.15, x1 - 0.15)  # x-margins does not work with pandas
-        ax.legend(loc='upper left', ncol=2, handletextpad=0.3,
+        ax.legend(loc='upper left', ncol=3, handletextpad=0.3,
                   borderaxespad=0.2, frameon=False)
 
     # Vary query size
@@ -409,7 +412,7 @@ def draw_range_query_intersects(prefix,
     index_loading_time = {}
     index_query_time = {}
     dataset = "parks_Europe.wkt.log"
-    query_sizes = (10000, 20000, 30000, 40000, 50000,)
+    query_sizes = (10000, 20000, 30000, 40000, 50000, )
     for index_type in index_types:
         loading_time, query_time = get_running_time_vary_size(os.path.join(prefix, folder_name, ), query_sizes,
                                                               index_type, dataset)
@@ -417,7 +420,7 @@ def draw_range_query_intersects(prefix,
         index_query_time[index_type] = query_time
         index_query_time = pd.DataFrame.from_dict(index_query_time, )
     index_query_time.columns = index_labels
-    index_query_time.plot(kind="line",  ax=ax3, color="black" )
+    index_query_time.plot(kind="line", ax=ax3, color="black")
     markers = ['*', "o", '^', '', 's', 'x']
 
     for i, line in enumerate(axes[3].get_lines()):
@@ -426,11 +429,11 @@ def draw_range_query_intersects(prefix,
 
         loc = [x for x in range(len(query_sizes))]
     ax3.set_xticks(loc, scale_size(query_sizes), rotation=0)
-    ax3.set_xlabel("(d) Varying query size on EUParks dataset")
+    ax3.set_xlabel("(d) Varying query size on OSMParks dataset")
     ax3.set_ylabel(ylabel='Query Time (ms)', labelpad=1)
     ax3.set_yscale('log')
     ax3.margins(y=0.4)
-    ax3.legend(loc='upper left', ncol=2, handletextpad=0.3,
+    ax3.legend(loc='upper left', ncol=3, handletextpad=0.3,
                borderaxespad=0.2, frameon=False,
                )
     fig.tight_layout(pad=0.1)
@@ -524,13 +527,13 @@ def draw_vary_rays(prefix):
 if __name__ == '__main__':
     dir = os.path.dirname(sys.argv[0]) + "/../query/logs"
 
-    draw_point_query(dir)
+    # draw_point_query(dir)
 
     # draw_range_contains_query(dir)
 
-    # draw_range_query_intersects(os.path.join(dir),
-    #                             ("rtree", "glin", "lbvh", "rtspatial"),
-    #                             ("Boost", "GLIN", "LBVH", "RTSpatial"),
-    #                             )
+    draw_range_query_intersects(os.path.join(dir),
+                                ( "lbvh", "rtspatial"),  # "rtree",
+                                ( "LBVH", "RTSpatial"),  # "Boost",
+                                )
 
     # draw_vary_rays(dir)

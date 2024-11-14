@@ -8,20 +8,23 @@ export RAYJOIN_ROOT="/local/storage/liang/.clion/RayJoin/cmake-build-release-dl1
 export DATASET_WKT_FILES=("dtl_cnty.wkt"
   "USACensusBlockGroupBoundaries.wkt"
   "USADetailedWaterBodies.wkt"
-  "parks_Europe.wkt"
-  "parks.bz2.wkt")
+  "parks_Europe.wkt")
+#export DATASET_WKT_FILES=("parks.bz2.wkt" "lakes.bz2.wkt" "AREAWATER.csv.bz2.wkt")
 export DATASET_CDB_FILES=("dtl_cnty.cdb"
   "USACensusBlockGroupBoundaries.cdb"
   "USADetailedWaterBodies.cdb"
   "parks_Europe.cdb")
+export DATASET_VARY_SIZE="parks_Europe.wkt"
 export CONTAINS_QUERY_SIZE=100000
 export INTERSECTS_QUERY_SIZE=10000
 export RAY_DUP_INTERSECTS_QUERY_SIZE=50000
 export QUERY_VARY_SIZES_CONTAINS=(50000 100000 200000 400000 800000)
+#export QUERY_VARY_SIZES_CONTAINS=(50000 100000 200000 400000 800000 1600000 3200000 6400000 12800000)
 export QUERY_VARY_SIZES_INTERSECTS=(10000 20000 30000 40000 50000)
 export BATCH_SIZES=(1000 10000 100000 1000000)
 export RANGE_QUERY_INTERSECTS_QUALIFIED_SIZES=(1 10 100)
 export RANGE_QUERY_INTERSECTS_SELECTIVITIES=("0.0001" "0.001" "0.01")
+export RANGE_QUERY_INTERSECTS_LOAD_FACTORS=("0.002" "0.002" "0.015")
 export SYNTHETIC_DATA_SIZES=(10000000 20000000 30000000 40000000 50000000)
 export SYNTHETIC_QUERY_SELECTIVITY="0.00001"
 export SYNTHETIC_QUERY_SIZE=10000

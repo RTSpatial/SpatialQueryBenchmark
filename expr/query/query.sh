@@ -37,7 +37,7 @@ function run_point_query_contains() {
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
         -index_type $index_type \
-        -load_factor 0.001"
+        -load_factor 0.00001"
       fi
 
       echo "$cmd" >"${log}.tmp"
@@ -53,7 +53,7 @@ function run_point_query_contains() {
 function run_point_query_contains_vary_size() {
   query_type="point-contains"
   index_type="$1"
-  wkt_file="parks_Europe.wkt"
+  wkt_file="$DATASET_VARY_SIZE"
 
   for query_size in "${QUERY_VARY_SIZES_CONTAINS[@]}"; do
     query_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
@@ -72,7 +72,7 @@ function run_point_query_contains_vary_size() {
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
         -index_type $index_type \
-        -load_factor 0.0001"
+        -load_factor 0.00001"
       fi
 
       echo "$cmd" >"${log}.tmp"
@@ -116,7 +116,7 @@ function run_range_query_contains() {
 function run_range_query_contains_vary_size() {
   query_type="range-contains"
   index_type="$1"
-  wkt_file="parks_Europe.wkt"
+  wkt_file="$DATASET_VARY_SIZE"
 
   for query_size in "${QUERY_VARY_SIZES_CONTAINS[@]}"; do
     query_dir="${QUERY_ROOT}/${query_type}_queries_${query_size}"
@@ -150,6 +150,7 @@ function run_range_query_intersects() {
   for wkt_file in "${DATASET_WKT_FILES[@]}"; do
     for ((i = 0; i < ${#RANGE_QUERY_INTERSECTS_SELECTIVITIES[@]}; i++)); do
       selectivity=${RANGE_QUERY_INTERSECTS_SELECTIVITIES[$i]}
+      load_factor=${RANGE_QUERY_INTERSECTS_LOAD_FACTORS[$i]}
       query_dir="${QUERY_ROOT}/${query_type}_select_${selectivity}_queries_${INTERSECTS_QUERY_SIZE}"
       query="${query_dir}/${wkt_file}"
       log="${log_dir}/${query_type}_select_${selectivity}_queries_${INTERSECTS_QUERY_SIZE}/${index_type}/${wkt_file}.log"
@@ -162,7 +163,8 @@ function run_range_query_intersects() {
           -query $query \
           -serialize $SERIALIZE_ROOT \
           -query_type ${query_type} \
-          -index_type $index_type" # park_europe, rays=50
+          -index_type $index_type \
+          -load_factor $load_factor"
 
         echo "$cmd" >"${log}.tmp"
         eval "$cmd" 2>&1 | tee -a "${log}.tmp"
@@ -175,11 +177,10 @@ function run_range_query_intersects() {
   done
 }
 
-
 function run_range_query_intersects_vary_size() {
   query_type="range-intersects"
   index_type="$1"
-  wkt_file="parks_Europe.wkt"
+  wkt_file="$DATASET_VARY_SIZE"
   selectivity="0.001"
 
   for query_size in "${QUERY_VARY_SIZES_INTERSECTS[@]}"; do
@@ -196,7 +197,7 @@ function run_range_query_intersects_vary_size() {
         -serialize $SERIALIZE_ROOT \
         -query_type $query_type \
         -index_type $index_type \
-        -load_factor 0.01"
+        -load_factor 0.0015"
 
       echo "$cmd" >"${log}.tmp"
       eval "$cmd" 2>&1 | tee -a "${log}.tmp"
@@ -213,16 +214,16 @@ function vary_parallelism_range_query_intersects() {
   index_type="rtspatial-vary-parallelism"
 
   for wkt_file in "${DATASET_WKT_FILES[@]}"; do
-      selectivity="0.0001"
-      query_dir="${QUERY_ROOT}/${query_type}_select_${selectivity}_queries_${RAY_DUP_INTERSECTS_QUERY_SIZE}"
-      query="${query_dir}/${wkt_file}"
-      log="${log_dir}/ray_duplication_${query_type}_select_${selectivity}_queries_${RAY_DUP_INTERSECTS_QUERY_SIZE}/${index_type}/${wkt_file}.log"
+    selectivity="0.0001"
+    query_dir="${QUERY_ROOT}/${query_type}_select_${selectivity}_queries_${RAY_DUP_INTERSECTS_QUERY_SIZE}"
+    query="${query_dir}/${wkt_file}"
+    log="${log_dir}/ray_duplication_${query_type}_select_${selectivity}_queries_${RAY_DUP_INTERSECTS_QUERY_SIZE}/${index_type}/${wkt_file}.log"
 
-      if [[ ! -f "${log}" ]]; then
-        echo "$log" | xargs dirname | xargs mkdir -p
+    if [[ ! -f "${log}" ]]; then
+      echo "$log" | xargs dirname | xargs mkdir -p
 
-        echo "Running query $query"
-        cmd="${BENCHMARK_ROOT}/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
+      echo "Running query $query"
+      cmd="${BENCHMARK_ROOT}/query -geom ${DATASET_ROOT}/polygons/${wkt_file} \
           -query $query \
           -serialize $SERIALIZE_ROOT \
           -query_type ${query_type} \
@@ -231,38 +232,44 @@ function vary_parallelism_range_query_intersects() {
           -avg_time=false \
           -load_factor=0.8"
 
-        echo "$cmd" >"${log}.tmp"
-        eval "$cmd" 2>&1 | tee -a "${log}.tmp"
+      echo "$cmd" >"${log}.tmp"
+      eval "$cmd" 2>&1 | tee -a "${log}.tmp"
 
-        if grep -q "Query Time" "${log}.tmp"; then
-          mv "${log}.tmp" "${log}"
-        fi
+      if grep -q "Query Time" "${log}.tmp"; then
+        mv "${log}.tmp" "${log}"
       fi
+    fi
   done
 }
 
-# CPU-based "rtree" "cgal"
-# GPU-based "cuspatial" "lbvh" "rtspatial"
+CPU=0
+GPU=1
 
-for index_type in "cuspatial" "lbvh" "rtspatial"; do
-  run_point_query_contains "$index_type"
-done
+if [[ $CPU -eq 1 ]]; then
+  for index_type in "rtree" "cgal" "pargeo"; do
+    run_point_query_contains "$index_type"
+    run_point_query_contains_vary_size "$index_type"
+  done
 
-for index_type in "cuspatial" "lbvh" "rtspatial"; do
-  run_point_query_contains_vary_size "$index_type"
-done
+  for index_type in "rtree" "glin"; do
+    run_range_query_contains "$index_type"
+    run_range_query_contains_vary_size "$index_type"
+    run_range_query_intersects "$index_type"
+    run_range_query_intersects_vary_size "$index_type"
+  done
+fi
 
-# CPU-based "rtree" "glin"
-# GPU-based "cuspatial" "lbvh" "rtspatial"
+if [[ $GPU -eq 1 ]]; then
+#  for index_type in "lbvh" "rtspatial" "cuspatial"; do
+#    run_point_query_contains "$index_type"
+#    run_point_query_contains_vary_size "$index_type"
+#  done
 
-for index_type in "lbvh" "rtspatial"; do
-  run_range_query_contains "$index_type"
-  run_range_query_intersects "$index_type"
-  run_range_query_intersects_vary_size "$index_type"
-done
-
-for index_type in "lbvh" "rtspatial"; do
-  run_range_query_contains_vary_size "$index_type"
-done
-
-#vary_parallelism_range_query_intersects
+  for index_type in "lbvh" "rtspatial"; do
+#    run_range_query_contains "$index_type"
+#    run_range_query_contains_vary_size "$index_type"
+    run_range_query_intersects "$index_type"
+    run_range_query_intersects_vary_size "$index_type"
+  done
+  #vary_parallelism_range_query_intersects
+fi

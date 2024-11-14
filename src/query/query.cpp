@@ -10,6 +10,7 @@
 #include "query/pargeo/point_query.h"
 
 #ifdef USE_GPU
+#include <optix_function_table_definition.h>
 #include "query/lbvh/point_query.h"
 #include "query/lbvh/range_query.h"
 #include "query/rtspatial/point_query.h"
@@ -91,8 +92,8 @@ int main(int argc, char *argv[]) {
   }
   case BenchmarkConfig::QueryType::kRangeContains:
   case BenchmarkConfig::QueryType::kRangeIntersects: {
-    auto queries =
-        PolygonsToBoxes(LoadPolygons(conf.query, conf.serialize, conf.limit));
+    // PolygonsToBoxes(LoadPolygons(conf.query, conf.serialize, conf.limit));
+    auto queries = PolygonsToBoxes(LoadPolygons(conf.query, conf.limit));
     std::cout << "Loaded queries " << queries.size() << std::endl;
 
     switch (conf.index_type) {
