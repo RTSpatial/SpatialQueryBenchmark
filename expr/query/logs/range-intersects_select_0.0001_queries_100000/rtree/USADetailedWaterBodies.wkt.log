@@ -1,8 +1,0 @@
-/home/geng.161/SpatialQueryBenchmark/build/query_counting -geom /home/geng.161/rtspatial/datasets/polygons/USADetailedWaterBodies.wkt           -query /home/geng.161/rtspatial/datasets/queries/range-intersects_select_0.0001_queries_100000/USADetailedWaterBodies.wkt           -serialize /home/geng.161/rtspatial/ser           -query_type range-intersects           -index_type rtree
-Loaded geometries 463595
-Loading Time 242.839 ms
-Geoms 463595
-Queries 100000
-Query Time 11.9506 ms
-Results 63547968
-Selectivity: 0.00137076

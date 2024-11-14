@@ -1,8 +1,0 @@
-/home/geng.161/SpatialQueryBenchmark/build/query -geom /home/geng.161/rtspatial/datasets/polygons/USACensusBlockGroupBoundaries.wkt         -query /home/geng.161/rtspatial/datasets/queries/range-contains_queries_100000/USACensusBlockGroupBoundaries.wkt         -serialize /home/geng.161/rtspatial/ser         -query_type range-contains         -index_type glin         -load_factor 0.001
-Loaded geometries 248954
-Loading Time 67.7834 ms
-Geoms 248954
-Queries 100000
-Query Time 55.1978 ms
-Results 120457
-Selectivity: 4.83852e-06

@@ -1,8 +1,0 @@
-/home/geng.161/SpatialQueryBenchmark/build/query -geom /home/geng.161/rtspatial/datasets/polygons/USADetailedWaterBodies.wkt         -query /home/geng.161/rtspatial/datasets/queries/point-contains_queries_100000/USADetailedWaterBodies.wkt         -serialize /home/geng.161/rtspatial/ser         -query_type point-contains         -index_type rtree         -load_factor 0.001
-Loaded geometries 463595
-Loading Time 245.449 ms
-Geoms 463595
-Queries 100000
-Query Time 4.1288 ms
-Results 118326
-Selectivity: 2.55236e-06

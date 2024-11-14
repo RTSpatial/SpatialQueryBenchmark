@@ -1,8 +1,0 @@
-/home/geng.161/SpatialQueryBenchmark/build/query_collecting -geom /home/geng.161/rtspatial/datasets/polygons/dtl_cnty.wkt           -query /home/geng.161/rtspatial/datasets/queries/range-intersects_select_0.01_queries_10000/dtl_cnty.wkt           -serialize /home/geng.161/rtspatial/ser           -query_type range-intersects           -index_type rtree
-Loaded geometries 12234
-Loading Time 1.496 ms
-Geoms 12234
-Queries 10000
-Query Time 5.2256 ms
-Results 3049103
-Selectivity: 0.0249232

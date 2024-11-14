@@ -1,8 +1,0 @@
-/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/synthetic/gaussian_n_30000000.wkt           -query /local/storage/liang/rtspatial/datasets/queries/range-contains_queries_10000/gaussian_n_30000000.wkt           -serialize /local/storage/liang/rtspatial/ser           -query_type range-contains           -index_type rtspatial           -load_factor 0.0001
-Loaded geometries 30000000
-Loading Time 89.1986 ms
-Geoms 30000000
-Queries 10000
-Query Time 84.5852 ms
-Results 11776417
-Selectivity: 3.92547e-05

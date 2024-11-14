@@ -1,8 +1,0 @@
-/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/synthetic/uniform_n_10000000.wkt           -query /local/storage/liang/rtspatial/datasets/queries/range-contains_queries_10000/uniform_n_10000000.wkt           -serialize /local/storage/liang/rtspatial/ser           -query_type range-contains           -index_type rtspatial           -load_factor 0.0001
-Loaded geometries 10000000
-Loading Time 29.5248 ms
-Geoms 10000000
-Queries 10000
-Query Time 4.3188 ms
-Results 4120830
-Selectivity: 4.12083e-05

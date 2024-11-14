@@ -1,6 +1,5 @@
-#include <algorithm>
 #include <iostream>
-
+#include <optix_function_table_definition.h>
 #include "benchmark_configs.h"
 #include "wkt_loader.h"
 

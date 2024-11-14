@@ -33,7 +33,6 @@ if (USE_GPU)
     find_package(rtspatial REQUIRED)
 
     message("RTSPATIAL_INCLUDE_DIR: ${RTSPATIAL_INCLUDE_DIR}")
-    message("RTSPATIAL_LIBRARIES: ${RTSPATIAL_LIBRARIES}")
     message("RTSPATIAL_SHADER_DIR: ${RTSPATIAL_SHADER_DIR}")
     message("CUDAToolkit_INCLUDE_DIRS: ${CUDAToolkit_INCLUDE_DIRS}")
 
@@ -84,10 +83,11 @@ add_executable(query src/query/query.cpp
         src/flags.cpp
         ${PROGRAM_MODULES_COLLECTING})
 target_compile_definitions(query PRIVATE PIECE) # GLIN requires for intersects query
-target_link_libraries(query pthread glin ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${GEOS_LIBRARY} ${Boost_LIBRARIES} pargeoLib)
+target_link_libraries(query pthread glin ${GFLAGS_LIBRARIES} ${GEOS_LIBRARY} ${Boost_LIBRARIES} pargeoLib)
 target_compile_definitions(query PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/ptx_query\")
 
 if (USE_GPU)
+    target_link_libraries(query cuda)
     target_compile_options(query PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
     set_target_properties(query PROPERTIES CUDA_ARCHITECTURES "${ENABLED_ARCHS}")
 endif ()
@@ -98,7 +98,8 @@ if (USE_GPU)
             ${GPU_SOURCES}
             src/flags.cpp
             ${PROGRAM_MODULES_PIP})
-    target_link_libraries(pip pthread ${GFLAGS_LIBRARIES} ${RTSPATIAL_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(query cuda)
+    target_link_libraries(pip pthread ${GFLAGS_LIBRARIES} ${Boost_LIBRARIES})
     target_compile_definitions(pip PRIVATE RTSPATIAL_PTX_DIR=\"${PROJECT_BINARY_DIR}/ptx_pip\")
     target_compile_options(pip PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda --expt-relaxed-constexpr --use_fast_math>)
     set_target_properties(pip PROPERTIES CUDA_ARCHITECTURES "${ENABLED_ARCHS}")

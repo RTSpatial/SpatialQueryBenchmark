@@ -1,4 +1,0 @@
-python3 /local/storage/liang/.clion/SpatialQueryBenchmark/expr/query/cuspatial_point_contains.py /local/storage/liang/rtspatial/datasets/polygons/USADetailedWaterBodies.wkt /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/USADetailedWaterBodies.wkt
-Loading Time 5.712 ms
-Query Time 39.198 ms
-Results 118326

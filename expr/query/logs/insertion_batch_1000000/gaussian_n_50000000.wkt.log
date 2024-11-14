@@ -1,3 +1,0 @@
-/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/synthetic/gaussian_n_50000000.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type insertion         -index_type rtspatial         -batch 1000000
-Loaded geometries 50000000
-Batch 1000000 Geoms 50000000 Insert Time 177.439 ms Throughput 2.81786e+08 geos/sec

@@ -1,8 +1,0 @@
-/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/polygons/USADetailedWaterBodies.wkt           -query /local/storage/liang/rtspatial/datasets/queries/range-intersects_select_0.001_queries_10000/USADetailedWaterBodies.wkt           -serialize /local/storage/liang/rtspatial/ser           -query_type range-intersects           -index_type lbvh
-Loaded geometries 463595
-Loading Time 3.2046 ms
-Geoms 463595
-Queries 10000
-Query Time 80.0674 ms
-Results 20757455
-Selectivity: 0.0044775

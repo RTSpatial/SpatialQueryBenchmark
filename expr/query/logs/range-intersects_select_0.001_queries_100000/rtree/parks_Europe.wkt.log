@@ -1,8 +1,0 @@
-/home/geng.161/SpatialQueryBenchmark/build/query_counting -geom /home/geng.161/rtspatial/datasets/polygons/parks_Europe.wkt           -query /home/geng.161/rtspatial/datasets/queries/range-intersects_select_0.001_queries_100000/parks_Europe.wkt           -serialize /home/geng.161/rtspatial/ser           -query_type range-intersects           -index_type rtree
-Loaded geometries 1856318
-Loading Time 1277.22 ms
-Geoms 1856318
-Queries 100000
-Query Time 69.9418 ms
-Results 488046613
-Selectivity: 0.00262911

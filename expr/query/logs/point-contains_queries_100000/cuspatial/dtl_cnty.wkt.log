@@ -1,4 +1,0 @@
-python3 /local/storage/liang/.clion/SpatialQueryBenchmark/expr/query/cuspatial_point_contains.py /local/storage/liang/rtspatial/datasets/polygons/dtl_cnty.wkt /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/dtl_cnty.wkt
-Loading Time 5.698 ms
-Query Time 13.153 ms
-Results 136457

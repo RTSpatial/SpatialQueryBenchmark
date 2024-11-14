@@ -1,3 +1,0 @@
-/local/storage/liang/.clion/SpatialQueryBenchmark/cmake-build-release-dl190/query -geom /local/storage/liang/rtspatial/datasets/synthetic/uniform_n_50000000.wkt         -serialize /local/storage/liang/rtspatial/ser         -query_type deletion         -index_type rtspatial         -batch 10000
-Loaded geometries 50000000
-Batch 10000 Geoms 50000000 Delete Time 119.382 ms Throughput 4.18823e+08 geoms/sec

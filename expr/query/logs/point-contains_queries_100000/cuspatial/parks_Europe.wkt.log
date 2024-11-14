@@ -1,4 +1,0 @@
-python3 /local/storage/liang/.clion/SpatialQueryBenchmark/expr/query/cuspatial_point_contains.py /local/storage/liang/rtspatial/datasets/polygons/parks_Europe.wkt /local/storage/liang/rtspatial/datasets/queries/point-contains_queries_100000/parks_Europe.wkt
-Loading Time 5.657 ms
-Query Time 86.115 ms
-Results 108930
