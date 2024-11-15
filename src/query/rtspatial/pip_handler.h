@@ -68,10 +68,6 @@ rtspatial_handle_point_contains(uint32_t geom_id, uint32_t query_id,
 
 
   if (pnpoly(nvert, ctx->vertices.data() + begin, x, y)) {
-    if(query_id == 7311) {
-      printf("box id %u\n", geom_id);
-    }
-
     ctx->results.Append(thrust::pair<uint32_t, uint32_t>(geom_id, query_id));
   }
 }
