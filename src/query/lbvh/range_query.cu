@@ -54,7 +54,6 @@ time_stat RunRangeQueryLBVH(const std::vector<box_t> &boxes,
       1ul, (size_t)(boxes.size() * queries.size() * config.load_factor)));
   auto d_results = results.DeviceObject();
 
-
   for (int i = 0; i < config.warmup + config.repeat; i++) {
     results.Clear();
     sw.start();
@@ -78,13 +77,9 @@ time_stat RunRangeQueryLBVH(const std::vector<box_t> &boxes,
             box.upper = make_float4(query.z, query.w, 0, 0);
 
             lbvh::query_device_all(
-                p_lbvh, lbvh::overlaps(box),
+                p_lbvh, lbvh::contains(box),
                 [=] __device__(std::uint32_t geom_id) mutable {
-                  aabb_getter getter;
-
-                  if (lbvh::contains(getter(p_boxes[geom_id]), box)) {
-                    d_results.Append(thrust::make_pair(geom_id, query_id));
-                  }
+                  d_results.Append(thrust::make_pair(geom_id, query_id));
                 });
           });
       break;

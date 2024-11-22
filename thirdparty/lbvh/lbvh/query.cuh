@@ -51,6 +51,52 @@ __device__ thrust::pair<uint32_t, uint32_t> query_device_all(
   return thrust::make_pair(traversed_nodes, num_found);
 }
 
+template <typename Real, typename Objects, bool IsConst, typename FuncT>
+__device__ thrust::pair<uint32_t, uint32_t> query_device_all(
+    const detail::basic_device_bvh<Real, Objects, IsConst>& bvh,
+    const query_contain<Real> q, FuncT f)
+
+    noexcept {
+  using bvh_type = detail::basic_device_bvh<Real, Objects, IsConst>;
+  using index_type = typename bvh_type::index_type;
+
+  index_type stack[64];  // is it okay?
+  index_type* stack_ptr = stack;
+  *stack_ptr++ = 0;  // root node is always 0
+  uint32_t num_found = 0;
+  uint32_t traversed_nodes = 0;
+
+  do {
+    const index_type node = *--stack_ptr;
+    const index_type L_idx = bvh.nodes[node].left_idx;
+    const index_type R_idx = bvh.nodes[node].right_idx;
+
+    if (contains(bvh.aabbs[L_idx], q.target)) {
+      const auto obj_idx = bvh.nodes[L_idx].object_idx;
+      if (obj_idx != 0xFFFFFFFF) {
+        f(obj_idx);
+        num_found++;
+      } else  // the node is not a leaf.
+      {
+        *stack_ptr++ = L_idx;
+      }
+      traversed_nodes++;
+    }
+    if (contains(bvh.aabbs[R_idx], q.target)) {
+      const auto obj_idx = bvh.nodes[R_idx].object_idx;
+      if (obj_idx != 0xFFFFFFFF) {
+        f(obj_idx);
+        num_found++;
+      } else  // the node is not a leaf.
+      {
+        *stack_ptr++ = R_idx;
+      }
+      traversed_nodes++;
+    }
+  } while (stack < stack_ptr);
+  return thrust::make_pair(traversed_nodes, num_found);
+}
+
 // query object indices that potentially overlaps with query aabb.
 //
 // requirements:
