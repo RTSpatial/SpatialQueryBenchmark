@@ -47,7 +47,7 @@ if (USE_GPU)
     include_directories(${RTSPATIAL_INCLUDE_DIR})
     link_directories(${RTSPATIAL_LIBRARY_DIR})
 
-    set(ENABLED_ARCHS "80")
+    set(ENABLED_ARCHS "75")
 endif ()
 # GLIN
 add_subdirectory(thirdparty/GLIN)
